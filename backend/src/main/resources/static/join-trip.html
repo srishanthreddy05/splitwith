@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Trip</title>
+</head>
+<body>
+    <h1>Join Trip</h1>
+    <form id="joinTripForm">
+        <div>
+            <label>Trip ID:</label>
+            <input type="text" id="tripId" placeholder="Enter trip ID" required>
+        </div>
+        <div style="margin-top: 10px;">
+            <label>User ID:</label>
+            <input type="text" id="userId" placeholder="Enter user ID" required>
+        </div>
+        <div style="margin-top: 10px;">
+            <button type="submit">Join Trip</button>
+        </div>
+    </form>
+
+    <div style="margin-top: 20px; border: 1px solid #ccc; padding: 10px;">
+        <h3>Response:</h3>
+        <pre id="response">Waiting for response...</pre>
+    </div>
+
+    <script>
+        document.getElementById('joinTripForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const tripId = document.getElementById('tripId').value;
+            const userId = document.getElementById('userId').value;
+
+            const payload = {
+                userId: userId
+            };
+
+            try {
+                const response = await fetch(`http://localhost:9090/trips/${tripId}/join`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('response').textContent = 'Error: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>

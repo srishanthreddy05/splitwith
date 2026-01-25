@@ -1,0 +1,134 @@
+{
+  "info": {
+    "name": "Splitwith Phase 1 API",
+    "description": "Complete Phase 1 verification endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Users",
+      "item": [
+        {
+          "name": "Create User - Alice",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice Johnson\",\n  \"email\": \"alice@example.com\"\n}"
+            },
+            "url": {"raw": "http://localhost:9090/users", "host": ["localhost"], "port": "9090", "path": ["users"]}
+          }
+        },
+        {
+          "name": "Create User - Bob",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bob Smith\",\n  \"email\": \"bob@example.com\"\n}"
+            },
+            "url": {"raw": "http://localhost:9090/users", "host": ["localhost"], "port": "9090", "path": ["users"]}
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "url": {"raw": "http://localhost:9090/users/{{userId}}", "host": ["localhost"], "port": "9090", "path": ["users", "{{userId}}"]}
+          }
+        },
+        {
+          "name": "Test Duplicate Email",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice Duplicate\",\n  \"email\": \"alice@example.com\"\n}"
+            },
+            "url": {"raw": "http://localhost:9090/users", "host": ["localhost"], "port": "9090", "path": ["users"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Trips",
+      "item": [
+        {
+          "name": "Create Trip",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Europe Vacation 2026\",\n  \"createdBy\": \"{{aliceId}}\"\n}"
+            },
+            "url": {"raw": "http://localhost:9090/trips", "host": ["localhost"], "port": "9090", "path": ["trips"]}
+          }
+        },
+        {
+          "name": "Add Bob to Trip",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{bobId}}\"\n}"
+            },
+            "url": {"raw": "http://localhost:9090/trips/{{tripId}}/join", "host": ["localhost"], "port": "9090", "path": ["trips", "{{tripId}}", "join"]}
+          }
+        },
+        {
+          "name": "Get User Trips",
+          "request": {
+            "method": "GET",
+            "url": {"raw": "http://localhost:9090/trips/user/{{aliceId}}", "host": ["localhost"], "port": "9090", "path": ["trips", "user", "{{aliceId}}"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Expenses",
+      "item": [
+        {
+          "name": "Add Expense - Hotel (Alice pays)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tripId\": \"{{tripId}}\",\n  \"paidBy\": \"{{aliceId}}\",\n  \"amount\": 200.00,\n  \"description\": \"Hotel booking\",\n  \"splitBetween\": [\"{{aliceId}}\", \"{{bobId}}\"]\n}"
+            },
+            "url": {"raw": "http://localhost:9090/expenses", "host": ["localhost"], "port": "9090", "path": ["expenses"]}
+          }
+        },
+        {
+          "name": "Add Expense - Dinner (Bob pays)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tripId\": \"{{tripId}}\",\n  \"paidBy\": \"{{bobId}}\",\n  \"amount\": 80.00,\n  \"description\": \"Dinner\",\n  \"splitBetween\": [\"{{aliceId}}\", \"{{bobId}}\"]\n}"
+            },
+            "url": {"raw": "http://localhost:9090/expenses", "host": ["localhost"], "port": "9090", "path": ["expenses"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Balances",
+      "item": [
+        {
+          "name": "Calculate Trip Balances",
+          "request": {
+            "method": "GET",
+            "url": {"raw": "http://localhost:9090/trips/{{tripId}}/balances", "host": ["localhost"], "port": "9090", "path": ["trips", "{{tripId}}", "balances"]}
+          }
+        }
+      ]
+    }
+  ]
+}

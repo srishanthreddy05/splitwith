@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Expense</title>
+</head>
+<body>
+    <h1>Create Expense</h1>
+    <form id="expenseForm">
+        <div>
+            <label>Trip ID:</label>
+            <input type="text" id="tripId" placeholder="Enter trip ID" required>
+        </div>
+        <div style="margin-top: 10px;">
+            <label>Paid By (User ID):</label>
+            <input type="text" id="paidBy" placeholder="Enter user ID who paid" required>
+        </div>
+        <div style="margin-top: 10px;">
+            <label>Amount:</label>
+            <input type="number" id="amount" placeholder="Enter amount" step="0.01" required>
+        </div>
+        <div style="margin-top: 10px;">
+            <label>Description:</label>
+            <input type="text" id="description" placeholder="Enter description" required>
+        </div>
+        <div style="margin-top: 10px;">
+            <label>Split Between (Comma-separated User IDs):</label>
+            <input type="text" id="splitBetween" placeholder="user1,user2,user3" required>
+        </div>
+        <div style="margin-top: 10px;">
+            <button type="submit">Create Expense</button>
+        </div>
+    </form>
+
+    <div style="margin-top: 20px; border: 1px solid #ccc; padding: 10px;">
+        <h3>Response:</h3>
+        <pre id="response">Waiting for response...</pre>
+    </div>
+
+    <script>
+        document.getElementById('expenseForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const tripId = document.getElementById('tripId').value;
+            const paidBy = document.getElementById('paidBy').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const description = document.getElementById('description').value;
+            const splitBetweenString = document.getElementById('splitBetween').value;
+
+            const splitBetween = splitBetweenString.split(',').map(id => id.trim());
+
+            const payload = {
+                tripId: tripId,
+                paidBy: paidBy,
+                amount: amount,
+                description: description,
+                splitBetween: splitBetween
+            };
+
+            try {
+                const response = await fetch('http://localhost:9090/expenses', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('response').textContent = 'Error: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>

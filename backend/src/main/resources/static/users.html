@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create User</title>
+</head>
+<body>
+    <h1>Create User</h1>
+    <form id="userForm">
+        <div>
+            <label>Name:</label>
+            <input type="text" id="name" placeholder="Enter name" required>
+        </div>
+        <div style="margin-top: 10px;">
+            <label>Email:</label>
+            <input type="email" id="email" placeholder="Enter email" required>
+        </div>
+        <div style="margin-top: 10px;">
+            <button type="submit">Create User</button>
+        </div>
+    </form>
+
+    <div style="margin-top: 20px; border: 1px solid #ccc; padding: 10px;">
+        <h3>Response:</h3>
+        <pre id="response">Waiting for response...</pre>
+    </div>
+
+    <script>
+        document.getElementById('userForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+
+            const payload = {
+                name: name,
+                email: email
+            };
+
+            try {
+                const response = await fetch('http://localhost:9090/users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('response').textContent = 'Error: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>
