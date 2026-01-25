@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Trip</title>
+</head>
+<body>
+    <h1>Create Trip</h1>
+    <form id="tripForm">
+        <div>
+            <label>Trip Name:</label>
+            <input type="text" id="tripName" placeholder="Enter trip name" required>
+        </div>
+        <div style="margin-top: 10px;">
+            <label>Creator User ID:</label>
+            <input type="text" id="createdBy" placeholder="Enter creator user ID" required>
+        </div>
+        <div style="margin-top: 10px;">
+            <button type="submit">Create Trip</button>
+        </div>
+    </form>
+
+    <div style="margin-top: 20px; border: 1px solid #ccc; padding: 10px;">
+        <h3>Response:</h3>
+        <pre id="response">Waiting for response...</pre>
+    </div>
+
+    <script>
+        document.getElementById('tripForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const tripName = document.getElementById('tripName').value;
+            const createdBy = document.getElementById('createdBy').value;
+
+            const payload = {
+                name: tripName,
+                createdBy: createdBy
+            };
+
+            try {
+                const response = await fetch('http://localhost:9090/trips', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('response').textContent = 'Error: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>

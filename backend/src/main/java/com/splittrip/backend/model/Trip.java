@@ -1,9 +1,10 @@
 package com.splittrip.backend.model;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import lombok.AllArgsConstructor;
@@ -15,16 +16,18 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "users")
-public class User {
+@Document(collection = "trips")
+public class Trip {
 
     @Id
     private String id;
 
     private String name;
 
-    @Indexed(unique = true)
-    private String email;
+    private String createdBy; // userId
+
+    @Builder.Default
+    private List<String> members = new ArrayList<>(); // list of userIds
 
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();

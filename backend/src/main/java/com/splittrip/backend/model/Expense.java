@@ -1,9 +1,10 @@
 package com.splittrip.backend.model;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import lombok.AllArgsConstructor;
@@ -15,16 +16,22 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "users")
-public class User {
+@Document(collection = "expenses")
+public class Expense {
 
     @Id
     private String id;
 
-    private String name;
+    private String tripId;
 
-    @Indexed(unique = true)
-    private String email;
+    private String paidBy; // userId
+
+    private Double amount;
+
+    private String description;
+
+    @Builder.Default
+    private List<String> splitBetween = new ArrayList<>(); // list of userIds
 
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
