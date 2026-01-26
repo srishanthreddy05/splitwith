@@ -3,6 +3,8 @@ package com.splittrip.backend.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,6 +34,17 @@ public class ExpenseController {
                     .body(ApiResponse.success(expense));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @GetMapping("/trip/{tripId}")
+    public ResponseEntity<ApiResponse<java.util.List<Expense>>> getExpensesByTrip(@PathVariable String tripId) {
+        try {
+            java.util.List<Expense> expenses = expenseService.getExpensesForTrip(tripId);
+            return ResponseEntity.ok(ApiResponse.success(expenses));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ApiResponse.error(e.getMessage()));
         }
     }

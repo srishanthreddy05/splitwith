@@ -15,4 +15,9 @@ public class CreateTripRequest {
     
     @NotBlank(message = "Creator userId is required")
     private String createdBy;
+
+    // For lightweight identity system (MVP)
+    // Will auto-create user if not exists
+    @NotBlank(message = "Creator userName is required")
+    private String createdByName;
 }

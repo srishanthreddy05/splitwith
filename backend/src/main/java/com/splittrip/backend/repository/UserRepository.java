@@ -8,4 +8,6 @@ import com.splittrip.backend.model.User;
 
 public interface UserRepository extends MongoRepository<User, String> {
     Optional<User> findByEmail(String email);
+    
+    Optional<User> findByGuestId(String guestId);
 }

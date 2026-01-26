@@ -1,5 +1,6 @@
 package com.splittrip.backend.service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -7,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.splittrip.backend.dto.BalanceSummary;
 import com.splittrip.backend.dto.UserBalance;
 import com.splittrip.backend.model.Expense;
 import com.splittrip.backend.model.Trip;
@@ -78,5 +80,66 @@ public class BalanceService {
                             .build();
                 })
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Calculate human-readable balance summary with payment instructions
+     * Example: "You have to pay ₹135 to Rahul" or "Rahul has to pay you ₹200"
+     */
+    public BalanceSummary calculateBalanceSummary(String tripId) {
+        Trip trip = tripRepository.findById(tripId)
+                .orElseThrow(() -> new IllegalArgumentException("Trip not found"));
+
+        List<UserBalance> rawBalances = calculateBalances(tripId);
+        List<BalanceSummary.BalanceInstruction> instructions = new ArrayList<>();
+
+        // Separate debtors and creditors
+        Map<String, UserBalance> creditors = new HashMap<>();  // Positive balance - should receive
+        Map<String, UserBalance> debtors = new HashMap<>();     // Negative balance - should pay
+
+        for (UserBalance balance : rawBalances) {
+            if (balance.getBalance() > 0.01) {  // Small threshold to handle floating point
+                creditors.put(balance.getUserId(), balance);
+            } else if (balance.getBalance() < -0.01) {
+                debtors.put(balance.getUserId(), balance);
+            }
+        }
+
+        // Generate payment instructions using greedy algorithm
+        for (UserBalance debtor : debtors.values()) {
+            double amountOwed = Math.abs(debtor.getBalance());
+            
+            for (UserBalance creditor : creditors.values()) {
+                if (amountOwed < 0.01) break;  // Debt settled
+                if (creditor.getBalance() < 0.01) continue;  // Creditor already paid
+
+                double amountToSettle = Math.min(amountOwed, creditor.getBalance());
+                amountToSettle = Math.round(amountToSettle * 100.0) / 100.0;
+
+                // Create instruction
+                BalanceSummary.BalanceInstruction instruction = BalanceSummary.BalanceInstruction.builder()
+                        .fromUserId(debtor.getUserId())
+                        .fromUserName(debtor.getUserName())
+                        .toUserId(creditor.getUserId())
+                        .toUserName(creditor.getUserName())
+                        .amount(amountToSettle)
+                        .message(String.format("%s has to pay ₹%.2f to %s", 
+                                debtor.getUserName(), amountToSettle, creditor.getUserName()))
+                        .build();
+
+                instructions.add(instruction);
+
+                // Update balances
+                amountOwed -= amountToSettle;
+                creditor.setBalance(creditor.getBalance() - amountToSettle);
+            }
+        }
+
+        return BalanceSummary.builder()
+                .tripId(tripId)
+                .tripName(trip.getName())
+                .rawBalances(rawBalances)
+                .instructions(instructions)
+                .build();
     }
 }

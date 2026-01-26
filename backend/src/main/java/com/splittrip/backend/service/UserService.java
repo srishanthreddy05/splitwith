@@ -40,4 +40,46 @@ public class UserService {
         return userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + id));
     }
+
+    /**
+     * Create or retrieve guest user
+     * Guest users are identified by guestId (stored in browser localStorage)
+     */
+    public User createGuestUser(String guestId, String name) {
+        // Check if guest already exists
+        return userRepository.findByGuestId(guestId)
+                .orElseGet(() -> {
+                    User guestUser = User.builder()
+                            .id(UUID.randomUUID().toString())
+                            .name(name)
+                            .guestId(guestId)
+                            .isGuest(true)
+                            .build();
+                    return userRepository.save(guestUser);
+                });
+    }
+
+    /**
+     * Get user by guest ID
+     */
+    public User getUserByGuestId(String guestId) {
+        return userRepository.findByGuestId(guestId)
+                .orElseThrow(() -> new IllegalArgumentException("Guest user not found"));
+    }
+
+    /**
+     * Get or create user by UUID (for lightweight identity system)
+     * If user doesn't exist, create with name. If exists, return existing user.
+     */
+    public User getOrCreateByIdAndName(String userId, String userName) {
+        return userRepository.findById(userId)
+                .orElseGet(() -> {
+                    User newUser = User.builder()
+                            .id(userId)
+                            .name(userName)
+                            .isGuest(true)
+                            .build();
+                    return userRepository.save(newUser);
+                });
+    }
 }

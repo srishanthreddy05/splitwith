@@ -57,4 +57,12 @@ public class ExpenseService {
 
         return expenseRepository.save(expense);
     }
+
+    public java.util.List<Expense> getExpensesForTrip(String tripId) {
+        // Ensure trip exists
+        if (!tripRepository.existsById(tripId)) {
+            throw new IllegalArgumentException("Trip not found");
+        }
+        return expenseRepository.findByTripId(tripId);
+    }
 }

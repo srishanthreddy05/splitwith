@@ -1,0 +1,68 @@
+import React, { useState } from 'react';
+import Landing from './pages/Landing';
+import CreateTrip from './pages/CreateTrip';
+import JoinTrip from './pages/JoinTrip';
+import TripDashboard from './pages/TripDashboard';
+import MyTrips from './pages/MyTrips';
+
+function App() {
+  const [currentPage, setCurrentPage] = useState('landing');  // landing, createTrip, joinTrip, tripDashboard, myTrips
+  const [selectedTripId, setSelectedTripId] = useState(null);
+
+  const navigateToCreateTrip = () => setCurrentPage('createTrip');
+  const navigateToJoinTrip = () => setCurrentPage('joinTrip');
+  const navigateToMyTrips = () => setCurrentPage('myTrips');
+  const navigateToLanding = () => {
+    setCurrentPage('landing');
+    setSelectedTripId(null);
+  };
+
+  const navigateToTripDashboard = (tripId) => {
+    setSelectedTripId(tripId);
+    setCurrentPage('tripDashboard');
+  };
+
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'landing':
+        return <Landing 
+          onCreateTrip={navigateToCreateTrip} 
+          onJoinTrip={navigateToJoinTrip} 
+        />;
+      case 'createTrip':
+        return <CreateTrip 
+          onBack={navigateToLanding}
+          onTripCreated={navigateToTripDashboard}
+        />;
+      case 'joinTrip':
+        return <JoinTrip 
+          onBack={navigateToLanding}
+          onJoinSuccess={navigateToTripDashboard}
+        />;
+      case 'tripDashboard':
+        return <TripDashboard 
+          tripId={selectedTripId}
+          onBack={navigateToLanding}
+          onViewMyTrips={navigateToMyTrips}
+        />;
+      case 'myTrips':
+        return <MyTrips 
+          onBack={navigateToLanding}
+          onSelectTrip={navigateToTripDashboard}
+        />;
+      default:
+        return <Landing 
+          onCreateTrip={navigateToCreateTrip} 
+          onJoinTrip={navigateToJoinTrip} 
+        />;
+    }
+  };
+
+  return (
+    <div style={{ minHeight: '100vh', backgroundColor: '#f7f9fc' }}>
+      {renderPage()}
+    </div>
+  );
+}
+
+export default App;
