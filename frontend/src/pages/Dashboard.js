@@ -2,10 +2,17 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getUserIdentity, tripAPI, joinRequestAPI } from '../services/apiClient';
 
-const Dashboard = () => {
+const Dashboard = ({ user }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { userId, userName } = getUserIdentity();
+  
+  // Support both OAuth users (from props) and localStorage users
+  // OAuth users: { id, name, email }
+  // Guest/Email users: { userId, displayName, email }
+  const localIdentity = getUserIdentity();
+  const userId = user?.id || user?.userId || localIdentity.userId;
+  const userName = user?.name || user?.displayName || localIdentity.userName;
+  
   const [activeTrips, setActiveTrips] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -17,6 +24,14 @@ const Dashboard = () => {
   const [completeLoading, setCompleteLoading] = useState({});
 
   const loadUserTrips = useCallback(async () => {
+    if (!userId) {
+      setError('User ID not available');
+      console.error('Dashboard: No userId available. User prop:', user);
+      return;
+    }
+    
+    console.log('Dashboard userId:', userId, 'userName:', userName);
+    
     try {
       setLoading(true);
       setError('');

@@ -1,18 +1,40 @@
 /**
  * Landing page: Main entry point after user identity is set
  * Shows welcome message and two main actions: Create Trip or Join Trip
+ * If user is not authenticated, show AuthChoiceModal
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getUserIdentity } from '../services/apiClient';
+import AuthChoiceModal from '../components/AuthChoiceModal';
 
-const Landing = () => {
+const Landing = ({ user }) => {
   const navigate = useNavigate();
-  const { userName } = getUserIdentity();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authAction, setAuthAction] = useState(null);
 
   const handleCreateTrip = () => {
-    navigate('/dashboard'); // Navigate to dashboard where user can create trip
+    if (user) {
+      navigate('/dashboard');
+    } else {
+      setAuthAction('create');
+      setShowAuthModal(true);
+    }
+  };
+
+  const handleJoinTrip = () => {
+    if (user) {
+      navigate('/dashboard');
+    } else {
+      setAuthAction('join');
+      setShowAuthModal(true);
+    }
+  };
+
+  const handleAuthSuccess = (authResponse) => {
+    // User is now authenticated, redirect to dashboard
+    setShowAuthModal(false);
+    navigate('/dashboard');
   };
 
   return (
@@ -23,9 +45,11 @@ const Landing = () => {
           <p style={styles.subtitle}>
             Split trip expenses with friends, stress-free
           </p>
-          <p style={styles.welcome}>
-            Welcome back, <strong>{userName}</strong>! 👋
-          </p>
+          {user && (
+            <p style={styles.welcome}>
+              Welcome back, <strong>{user.displayName}</strong>! 👋
+            </p>
+          )}
         </div>
 
         {/* Main Actions */}
@@ -44,7 +68,7 @@ const Landing = () => {
 
           <div 
             style={styles.card}
-            onClick={() => navigate('/dashboard')}
+            onClick={handleJoinTrip}
           >
             <div style={styles.cardIcon}>🎫</div>
             <h2 style={styles.cardTitle}>Join a Trip</h2>
@@ -56,14 +80,16 @@ const Landing = () => {
         </div>
 
         {/* Secondary Action */}
-        <div style={styles.secondaryAction}>
-          <button 
-            onClick={() => navigate('/previous-trips')}
-            style={styles.secondaryButton}
-          >
-            View My Previous Trips
-          </button>
-        </div>
+        {user && (
+          <div style={styles.secondaryAction}>
+            <button 
+              onClick={() => navigate('/previous-trips')}
+              style={styles.secondaryButton}
+            >
+              View My Previous Trips
+            </button>
+          </div>
+        )}
 
         {/* Info Box */}
         <div style={styles.infoBox}>
@@ -72,6 +98,14 @@ const Landing = () => {
           </p>
         </div>
       </div>
+
+      {showAuthModal && (
+        <AuthChoiceModal
+          action={authAction}
+          onSuccess={handleAuthSuccess}
+          onClose={() => setShowAuthModal(false)}
+        />
+      )}
     </div>
   );
 };

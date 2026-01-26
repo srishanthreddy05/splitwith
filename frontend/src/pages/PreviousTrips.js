@@ -7,13 +7,24 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUserIdentity, tripAPI } from '../services/apiClient';
 
-const PreviousTrips = () => {
+const PreviousTrips = ({ user }) => {
   const navigate = useNavigate();
-  const { userId } = getUserIdentity();
+  
+  // Support both OAuth users (from props) and localStorage users
+  // OAuth users: { id, name, email }
+  // Guest/Email users: { userId, displayName, email }
+  const localIdentity = getUserIdentity();
+  const userId = user?.id || user?.userId || localIdentity.userId;
+  
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const loadTrips = useCallback(async () => {
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
       const allTrips = await tripAPI.getUserTrips(userId);

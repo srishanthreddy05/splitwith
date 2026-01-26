@@ -5,11 +5,9 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { getUserIdentity } from '../services/apiClient';
 
-const Navbar = () => {
+const Navbar = ({ user }) => {
   const location = useLocation();
-  const { userName } = getUserIdentity();
 
   const isActive = (path) => location.pathname === path;
 
@@ -31,18 +29,20 @@ const Navbar = () => {
         </div>
 
         {/* Right: Navigation Links */}
-        <div style={styles.right}>
-          <Link to="/dashboard" style={linkStyle('/dashboard')}>
-            Dashboard
-          </Link>
-          <Link to="/previous-trips" style={linkStyle('/previous-trips')}>
-            Previous Trips
-          </Link>
-          <Link to="/profile" style={linkStyle('/profile')}>
-            Profile
-          </Link>
-          <span style={styles.userName}>Hi, {userName}!</span>
-        </div>
+        {user && (
+          <div style={styles.right}>
+            <Link to="/dashboard" style={linkStyle('/dashboard')}>
+              Dashboard
+            </Link>
+            <Link to="/previous-trips" style={linkStyle('/previous-trips')}>
+              Previous Trips
+            </Link>
+            <Link to="/profile" style={linkStyle('/profile')}>
+              Profile
+            </Link>
+            <span style={styles.userName}>Hi, {user.displayName}!</span>
+          </div>
+        )}
       </div>
     </nav>
   );

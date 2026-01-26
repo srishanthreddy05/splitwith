@@ -17,6 +17,7 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // CRITICAL: Send session cookies for OAuth
 });
 
 /**
@@ -48,19 +49,28 @@ export const hasUserIdentity = () => {
 
 /**
  * Interceptor: Add user identity to all requests
+ * Supports both localStorage-based identity (guest/email) and OAuth users
  */
 apiClient.interceptors.request.use((config) => {
   const { userId, userName } = getUserIdentity();
   
-  // For requests with body, add user info to request body
-  if (config.data && typeof config.data === 'object') {
-    config.data.userId = userId;
-    config.data.userName = userName;
+  // Only add user identity headers if they exist (localStorage users)
+  // OAuth users are authenticated via session cookie
+  if (userId) {
+    // For requests with body, add user info to request body ONLY if not already present
+    if (config.data && typeof config.data === 'object') {
+      if (!config.data.userId) {
+        config.data.userId = userId;
+      }
+      if (!config.data.userName) {
+        config.data.userName = userName;
+      }
+    }
+    
+    // Also add as headers for GET requests
+    config.headers['X-User-Id'] = userId;
+    config.headers['X-User-Name'] = userName;
   }
-  
-  // Also add as headers for GET requests
-  config.headers['X-User-Id'] = userId;
-  config.headers['X-User-Name'] = userName;
   
   return config;
 });

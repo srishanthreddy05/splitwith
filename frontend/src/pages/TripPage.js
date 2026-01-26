@@ -7,9 +7,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { tripAPI, expenseAPI, joinRequestAPI, getUserIdentity } from '../services/apiClient';
 
-const TripPage = () => {
+const TripPage = ({ user }) => {
   const { tripId } = useParams();
-  const { userId } = getUserIdentity();
+  
+  // Support both OAuth users (from props) and localStorage users
+  // OAuth users: { id, name, email }
+  // Guest/Email users: { userId, displayName, email }
+  const localIdentity = getUserIdentity();
+  const userId = user?.id || user?.userId || localIdentity.userId;
+  
   const [tripSummary, setTripSummary] = useState(null);
   const [trip, setTrip] = useState(null);
   const [balances, setBalances] = useState([]);
@@ -130,6 +136,9 @@ const TripPage = () => {
     try {
       setRequestActionLoading(true);
       console.log('Approving join request:', requestId);
+      console.log('Current userId:', userId);
+      console.log('Trip createdBy:', trip?.createdBy);
+      console.log('User prop:', user);
       await joinRequestAPI.approve(requestId, userId);
       console.log('Join request approved');
       
