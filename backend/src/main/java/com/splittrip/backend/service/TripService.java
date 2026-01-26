@@ -112,11 +112,11 @@ public class TripService {
                 })
                 .collect(Collectors.toList());
 
-        // Calculate total expenses
+        // Calculate total expenses (amount stored in paise)
         List<Expense> expenses = expenseRepository.findByTripId(tripId);
         long totalAmount = expenses.stream()
-                .mapToLong(e -> Math.round(e.getAmount() * 100)) // Convert to paise/cents
-                .sum();
+            .mapToLong(e -> Math.round(e.getAmount()))
+            .sum();
 
         return TripSummaryDTO.builder()
                 .tripId(trip.getId())
@@ -126,5 +126,20 @@ public class TripService {
                 .totalExpensesAmount(totalAmount)
                 .memberNames(memberNames)
                 .build();
+    }
+
+    /**
+     * Update trip status (e.g., from ACTIVE to COMPLETED)
+     */
+    public Trip updateTripStatus(String tripId, String status) {
+        Trip trip = tripRepository.findById(tripId)
+                .orElseThrow(() -> new IllegalArgumentException("Trip not found"));
+
+        try {
+            trip.setStatus(Trip.TripStatus.valueOf(status.toUpperCase()));
+            return tripRepository.save(trip);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid status: " + status + ". Must be ACTIVE or COMPLETED");
+        }
     }
 }

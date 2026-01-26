@@ -169,6 +169,18 @@ export const tripAPI = {
   },
 
   /**
+   * Update trip status
+   * PUT /trips/{tripId}/status
+   * Body: { status }
+   */
+  updateStatus: async (tripId, status) => {
+    const response = await apiClient.put(`/trips/${tripId}/status`, {
+      status,
+    });
+    return response.data.data;
+  },
+
+  /**
    * Get balance summary for trip
    * GET /trips/{tripId}/balance-summary
    */
@@ -183,6 +195,63 @@ export const tripAPI = {
    */
   getBalances: async (tripId) => {
     const response = await apiClient.get(`/trips/${tripId}/balances`);
+    return response.data.data;
+  },
+};
+
+// ============= JOIN REQUEST APIs =============
+export const joinRequestAPI = {
+  /**
+   * Submit a join request
+   * POST /join-requests
+   */
+  submit: async (tripId, userId) => {
+    const response = await apiClient.post('/join-requests', {
+      tripId,
+      userId,
+    });
+    return response.data.data;
+  },
+
+  /**
+   * Get pending requests for trip (creator view)
+   * GET /join-requests/trip/{tripId}/pending
+   */
+  getPendingForTrip: async (tripId) => {
+    const response = await apiClient.get(`/join-requests/trip/${tripId}/pending`);
+    return response.data.data;
+  },
+
+  /**
+   * Get pending requests for user (member view)
+   * GET /join-requests/user/{userId}/pending
+   */
+  getPendingForUser: async (userId) => {
+    const response = await apiClient.get(`/join-requests/user/${userId}/pending`);
+    return response.data.data;
+  },
+
+  /**
+   * Approve a join request (creator action)
+   * POST /join-requests/approve
+   */
+  approve: async (requestId, userId) => {
+    const response = await apiClient.post('/join-requests/approve', {
+      requestId,
+      userId,
+    });
+    return response.data.data;
+  },
+
+  /**
+   * Reject a join request
+   * POST /join-requests/reject
+   */
+  reject: async (requestId, userId) => {
+    const response = await apiClient.post('/join-requests/reject', {
+      requestId,
+      userId,
+    });
     return response.data.data;
   },
 };

@@ -52,7 +52,12 @@ const PreviousTrips = () => {
                 style={styles.tripCard}
                 onClick={() => navigate(`/trip/${trip.id}`)}
               >
-                <h3 style={styles.tripName}>{trip.name}</h3>
+                <div style={styles.tripTitleRow}>
+                  <h3 style={styles.tripName}>{trip.name}</h3>
+                  <span style={styles.tripTag}>
+                    {trip.createdBy === userId ? 'Created' : 'Joined'}
+                  </span>
+                </div>
                 <p style={styles.tripMeta}>
                   {trip.members.length} members • Completed
                 </p>
@@ -112,11 +117,26 @@ const styles = {
     transition: 'all 0.2s',
     border: '1px solid #e2e8f0',
   },
+  tripTitleRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '8px',
+  },
   tripName: {
     fontSize: '16px',
     fontWeight: 'bold',
     color: '#1a202c',
     margin: '0 0 8px 0',
+  },
+  tripTag: {
+    padding: '4px 8px',
+    fontSize: '12px',
+    fontWeight: '600',
+    color: '#234e52',
+    backgroundColor: '#c6f6d5',
+    borderRadius: '999px',
+    whiteSpace: 'nowrap',
   },
   tripMeta: {
     fontSize: '12px',

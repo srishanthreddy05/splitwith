@@ -52,18 +52,21 @@ public class BalanceService {
 
         // Calculate balances from expenses
         for (Expense expense : expenses) {
-            // Person who paid gets credited the full amount
-            balances.put(expense.getPaidBy(), 
-                    balances.get(expense.getPaidBy()) + expense.getAmount());
+            // Amount is stored in paise; convert to rupees for calculations
+            double amountRupees = (expense.getAmount() == null ? 0.0 : expense.getAmount() / 100.0);
 
-            // Calculate equal share
+            // Person who paid gets credited the full amount (in rupees)
+            balances.put(expense.getPaidBy(),
+                balances.getOrDefault(expense.getPaidBy(), 0.0) + amountRupees);
+
+            // Calculate equal share (in rupees)
             int splitCount = expense.getSplitBetween().size();
-            double sharePerPerson = expense.getAmount() / splitCount;
+            double sharePerPerson = splitCount > 0 ? amountRupees / splitCount : 0.0;
 
             // Each person in split gets debited their share
             for (String userId : expense.getSplitBetween()) {
-                balances.put(userId, 
-                        balances.getOrDefault(userId, 0.0) - sharePerPerson);
+            balances.put(userId,
+                balances.getOrDefault(userId, 0.0) - sharePerPerson);
             }
         }
 

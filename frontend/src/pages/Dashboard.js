@@ -1,40 +1,31 @@
-/**
- * Dashboard: Shows current active trip or allows creating/joining a new trip
- * This is the user's home page after landing
- */
-
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getUserIdentity, tripAPI } from '../services/apiClient';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { getUserIdentity, tripAPI, joinRequestAPI } from '../services/apiClient';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { userId, userName } = getUserIdentity();
-  const [tripData, setTripData] = useState(null);
+  const [activeTrips, setActiveTrips] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('active'); // 'active' or 'join'
+  const [activeTab, setActiveTab] = useState('create');
   const [tripCode, setTripCode] = useState('');
   const [joinError, setJoinError] = useState('');
+  const [joinMessage, setJoinMessage] = useState('');
   const [joinLoading, setJoinLoading] = useState(false);
+  const [completeLoading, setCompleteLoading] = useState({});
 
   const loadUserTrips = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
       const trips = await tripAPI.getUserTrips(userId);
-      console.log('Loaded trips:', trips);
-      // Get first active trip (this is simplified - future could show multiple)
-      if (trips && trips.length > 0) {
-        const activeTrip = trips.find(t => t.status === 'ACTIVE') || trips[0];
-        setTripData(activeTrip);
-      } else {
-        setError('No trips found');
-      }
+      const active = Array.isArray(trips) ? trips.filter(t => t.status === 'ACTIVE') : [];
+      setActiveTrips(active);
     } catch (err) {
-      console.error('Error loading trips:', err);
       setError('Failed to load trips: ' + (err?.message || err));
-      setTripData(null);
+      setActiveTrips([]);
     } finally {
       setLoading(false);
     }
@@ -42,111 +33,82 @@ const Dashboard = () => {
 
   useEffect(() => {
     loadUserTrips();
-  }, [loadUserTrips]);
+  }, [loadUserTrips, location]);
+
+  const handleCreateTrip = async () => {
+    const tripName = window.prompt('Name your trip:');
+    if (!tripName || !tripName.trim()) return;
+
+    setError('');
+    try {
+      const newTrip = await tripAPI.create(tripName.trim(), userId, userName);
+      navigate(`/trip/${newTrip.id}`);
+    } catch (err) {
+      setError('Failed to create trip: ' + (err?.message || err));
+    }
+  };
 
   const handleJoinTrip = async (e) => {
     e.preventDefault();
-    
-    if (!tripCode.trim()) {
-      setJoinError('Please enter a trip code');
+    setJoinError('');
+    setJoinMessage('');
+    const code = tripCode.trim().toUpperCase();
+    if (!code) {
+      setJoinError('Enter a trip code');
       return;
     }
 
+    setJoinLoading(true);
     try {
-      setJoinLoading(true);
-      setJoinError('');
+      const trip = await tripAPI.getByCode(code);
+      if (!trip?.id) {
+        setJoinError('Trip not found');
+        return;
+      }
 
-      // Find trip by code
-      const trip = await tripAPI.getByCode(tripCode.trim().toUpperCase());
-      
-      // Create join request instead of directly joining
-      // The API will handle sending a request that the trip creator can approve
-      await tripAPI.joinTrip(trip.id, userId);
-
-      // Success message
-      setJoinError(''); // Clear error
-      alert(`Join request sent! The trip creator will need to approve you.`);
+      await joinRequestAPI.submit(trip.id, userId);
+      setJoinMessage('Join request sent. The creator will approve it soon.');
       setTripCode('');
-      setActiveTab('active');
     } catch (err) {
-      setJoinError(err || 'Trip not found or could not send join request');
+      setJoinError('Failed to join: ' + (err?.message || err));
     } finally {
       setJoinLoading(false);
     }
   };
 
-  const handleCreateTrip = () => {
-    // Simple modal to create a trip
-    const tripName = prompt('Enter trip name:');
-    if (tripName && tripName.trim()) {
-      createTrip(tripName.trim());
+  const handleCompleteTrip = async (tripId) => {
+    // Only creators can complete trips
+    const targetTrip = activeTrips.find(t => t.id === tripId);
+    if (!targetTrip || targetTrip.createdBy !== userId) {
+      setError('Only the trip creator can complete this trip.');
+      return;
     }
-  };
 
-  const createTrip = async (tripName) => {
+    setCompleteLoading(prev => ({ ...prev, [tripId]: true }));
+    setError('');
     try {
-      const newTrip = await tripAPI.create(tripName, userId, userName);
-      navigate(`/trip/${newTrip.id}`);
+      await tripAPI.updateStatus(tripId, 'COMPLETED');
+      await loadUserTrips();
     } catch (err) {
-      alert('Error creating trip: ' + err);
+      setError('Failed to complete trip: ' + (err?.message || err));
+    } finally {
+      setCompleteLoading(prev => ({ ...prev, [tripId]: false }));
     }
   };
-
-  if (loading) {
-    return (
-      <div style={styles.container}>
-        <div style={styles.loadingBox}>Loading trips...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div style={styles.container}>
-        <div style={styles.errorBox}>
-          <p style={styles.errorText}>{error}</p>
-          <button 
-            onClick={() => loadUserTrips()}
-            style={styles.primaryButton}
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div style={styles.container}>
       <div style={styles.content}>
-        {tripData ? (
-          // Show current trip
-          <div style={styles.tripCard}>
-            <h2 style={styles.tripTitle}>{tripData.name}</h2>
-            <p style={styles.tripCode}>Code: <strong>{tripData.tripCode}</strong></p>
-            <p style={styles.tripInfo}>
-              {tripData.members.length} members • {tripData.status === 'ACTIVE' ? 'Active' : 'Completed'}
-            </p>
-            <button
-              onClick={() => navigate(`/trip/${tripData.id}`)}
-              style={styles.primaryButton}
-            >
-              Open Trip Details
-            </button>
-          </div>
-        ) : (
-          // Show empty state
-          <div style={styles.emptyState}>
-            <p style={styles.emptyText}>
-              You are not part of any active trip yet.
-            </p>
-            <p style={styles.emptySubtext}>
-              Create a new trip or join an existing one!
-            </p>
+        {loading && (
+          <div style={styles.loadingBox}>Loading your trips...</div>
+        )}
+
+        {error && (
+          <div style={styles.errorBox}>
+            <p style={styles.errorText}>{error}</p>
           </div>
         )}
 
-        {/* Tabs for Create/Join */}
         <div style={styles.tabs}>
           <button
             onClick={() => setActiveTab('create')}
@@ -170,7 +132,6 @@ const Dashboard = () => {
           </button>
         </div>
 
-        {/* Create Tab */}
         {activeTab === 'create' && (
           <div style={styles.tabContent}>
             <p style={styles.tabDescription}>
@@ -185,7 +146,6 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Join Tab */}
         {activeTab === 'join' && (
           <div style={styles.tabContent}>
             <p style={styles.tabDescription}>
@@ -199,11 +159,13 @@ const Dashboard = () => {
                 onChange={(e) => {
                   setTripCode(e.target.value.toUpperCase());
                   setJoinError('');
+                  setJoinMessage('');
                 }}
                 style={styles.input}
                 disabled={joinLoading}
               />
               {joinError && <p style={styles.error}>{joinError}</p>}
+              {joinMessage && <p style={styles.success}>{joinMessage}</p>}
               <button
                 type="submit"
                 style={styles.primaryButton}
@@ -214,6 +176,49 @@ const Dashboard = () => {
             </form>
           </div>
         )}
+
+        <div style={styles.tripsSection}>
+          <h2 style={styles.sectionTitle}>Your Active Trips</h2>
+          {activeTrips && activeTrips.length > 0 ? (
+            <div style={styles.tripsGrid}>
+              {activeTrips.map(trip => (
+                <div key={trip.id} style={styles.tripCard}>
+                  <h3 style={styles.tripTitle}>{trip.name}</h3>
+                  <p style={styles.tripCode}>Code: <strong>{trip.tripCode}</strong></p>
+                  <p style={styles.tripInfo}>
+                    {trip.members?.length || 0} members • {trip.status === 'ACTIVE' ? '✅ Active' : 'Completed'}
+                  </p>
+                  <div style={styles.tripActions}>
+                    <button
+                      onClick={() => navigate(`/trip/${trip.id}`)}
+                      style={styles.primaryButton}
+                    >
+                      View Details
+                    </button>
+                    {trip.createdBy === userId && (
+                      <button
+                        onClick={() => handleCompleteTrip(trip.id)}
+                        disabled={completeLoading[trip.id]}
+                        style={styles.completeButton}
+                      >
+                        {completeLoading[trip.id] ? 'Completing...' : 'Complete'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={styles.emptyState}>
+              <p style={styles.emptyText}>
+                You are not part of any active trip yet.
+              </p>
+              <p style={styles.emptySubtext}>
+                Create a new trip or join an existing one!
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -239,10 +244,11 @@ const styles = {
     backgroundColor: '#fed7d7',
     borderRadius: '8px',
     padding: '20px',
+    marginBottom: '20px',
   },
   errorText: {
     color: '#c53030',
-    margin: '0 0 15px 0',
+    margin: '0',
   },
   tripCard: {
     backgroundColor: 'white',
@@ -307,6 +313,7 @@ const styles = {
     borderRadius: '12px',
     padding: '30px',
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+    marginBottom: '20px',
   },
   tabDescription: {
     fontSize: '14px',
@@ -337,8 +344,59 @@ const styles = {
     cursor: 'pointer',
     transition: 'background-color 0.2s',
   },
+  completeButton: {
+    padding: '12px 16px',
+    fontSize: '14px',
+    fontWeight: '600',
+    backgroundColor: '#48bb78',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    transition: 'background-color 0.2s',
+  },
+  tripsSection: {
+    marginBottom: '30px',
+  },
+  sectionTitle: {
+    fontSize: '18px',
+    fontWeight: '600',
+    color: '#1a202c',
+    marginBottom: '16px',
+  },
+  tripsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+    gap: '16px',
+    marginBottom: '30px',
+  },
+  tripTitleRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '8px',
+  },
+  tripActions: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '8px',
+  },
+  tripTag: {
+    padding: '4px 8px',
+    fontSize: '12px',
+    fontWeight: '600',
+    color: '#234e52',
+    backgroundColor: '#c6f6d5',
+    borderRadius: '999px',
+    whiteSpace: 'nowrap',
+  },
   error: {
     color: '#f56565',
+    fontSize: '12px',
+    margin: '0',
+  },
+  success: {
+    color: '#2f855a',
     fontSize: '12px',
     margin: '0',
   },

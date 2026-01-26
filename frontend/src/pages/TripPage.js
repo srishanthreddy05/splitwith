@@ -5,15 +5,21 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { tripAPI, expenseAPI } from '../services/apiClient';
+import { tripAPI, expenseAPI, joinRequestAPI, getUserIdentity } from '../services/apiClient';
 
 const TripPage = () => {
   const { tripId } = useParams();
+  const { userId } = getUserIdentity();
   const [tripSummary, setTripSummary] = useState(null);
   const [trip, setTrip] = useState(null);
   const [balances, setBalances] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // Join request state
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [showJoinRequests, setShowJoinRequests] = useState(false);
+  const [requestActionLoading, setRequestActionLoading] = useState(false);
   
   // Expense modal state
   const [showExpenseModal, setShowExpenseModal] = useState(false);
@@ -49,6 +55,16 @@ const TripPage = () => {
       const tripBalances = await tripAPI.getBalances(tripId);
       console.log('Trip balances loaded:', tripBalances);
       setBalances(tripBalances || []);
+
+      // Load pending join requests for this trip (if user is creator)
+      try {
+        const requests = await joinRequestAPI.getPendingForTrip(tripId);
+        console.log('Pending join requests:', requests);
+        setPendingRequests(requests || []);
+      } catch (err) {
+        console.log('Could not load join requests:', err);
+        setPendingRequests([]);
+      }
     } catch (err) {
       setError(err || 'Failed to load trip');
       console.error('Error loading trip:', err);
@@ -99,18 +115,51 @@ const TripPage = () => {
   };
 
   const formatCurrency = (amount) => {
-    // Amount might be in paise or might be returned in unexpected format
-    if (!amount) return '0.00';
-    
-    // If the amount ends in 00 and is very large (suggesting it's been multiplied by 100 twice)
-    // we need to handle it. Check if dividing by 10000 makes more sense.
-    if (amount > 100000 && amount % 100 === 0 && Math.abs(amount / 10000) < 100000) {
-      // Looks like it might have been multiplied by 100 extra
-      return (amount / 10000).toFixed(2);
+    // Handles both rupee amounts (balances) and paise amounts (summary totals)
+    if (amount === null || amount === undefined || isNaN(amount)) return '0.00';
+
+    const numeric = Number(amount);
+    // Heuristic: if value is very large (>= 100000) we treat it as paise and divide by 100
+    // Example: 240000 (paise) -> 2400.00 (rupees); 2400 (already rupees) stays 2400.00
+    const inRupees = Math.abs(numeric) >= 100000 ? numeric / 100 : numeric;
+
+    return inRupees.toFixed(2);
+  };
+
+  const handleApproveJoinRequest = async (requestId) => {
+    try {
+      setRequestActionLoading(true);
+      console.log('Approving join request:', requestId);
+      await joinRequestAPI.approve(requestId, userId);
+      console.log('Join request approved');
+      
+      // Reload trip data to see updated members
+      await loadTripData();
+      alert('Join request approved! Member added to trip.');
+    } catch (err) {
+      alert('Error approving request: ' + err);
+      console.error('Error approving join request:', err);
+    } finally {
+      setRequestActionLoading(false);
     }
-    
-    // Standard case: divide by 100 (paise to rupees)
-    return (amount / 100).toFixed(2);
+  };
+
+  const handleRejectJoinRequest = async (requestId) => {
+    try {
+      setRequestActionLoading(true);
+      console.log('Rejecting join request:', requestId);
+      await joinRequestAPI.reject(requestId, userId);
+      console.log('Join request rejected');
+      
+      // Reload trip data to see updated requests
+      await loadTripData();
+      alert('Join request rejected.');
+    } catch (err) {
+      alert('Error rejecting request: ' + err);
+      console.error('Error rejecting join request:', err);
+    } finally {
+      setRequestActionLoading(false);
+    }
   };
 
   const handleAddExpense = async (e) => {
@@ -282,6 +331,53 @@ const TripPage = () => {
             )}
           </div>
         </div>
+
+        {/* Pending Join Requests */}
+        {pendingRequests && pendingRequests.length > 0 && (
+          <div style={styles.section}>
+            <h2 style={styles.sectionTitle}>
+              Join Requests ({pendingRequests.length})
+            </h2>
+            <button
+              onClick={() => setShowJoinRequests(!showJoinRequests)}
+              style={styles.toggleButton}
+              disabled={requestActionLoading}
+            >
+              {showJoinRequests ? 'Hide Requests' : 'Review Requests'}
+            </button>
+
+            {showJoinRequests && (
+              <div style={styles.requestsList}>
+                {pendingRequests.map((request) => (
+                  <div key={request.id} style={styles.requestItem}>
+                    <div style={styles.requestInfo}>
+                      <p style={styles.requestUser}>{request.userName}</p>
+                      <p style={styles.requestTime}>
+                        Requested on {new Date(request.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div style={styles.requestActions}>
+                      <button
+                        onClick={() => handleApproveJoinRequest(request.id)}
+                        disabled={requestActionLoading}
+                        style={{ ...styles.approveButton }}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => handleRejectJoinRequest(request.id)}
+                        disabled={requestActionLoading}
+                        style={{ ...styles.rejectButton }}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Balances */}
         <div style={styles.section}>
@@ -743,6 +839,69 @@ const styles = {
     borderRadius: '6px',
     cursor: 'pointer',
     fontSize: '14px',
+    fontWeight: '600',
+  },
+  toggleButton: {
+    padding: '10px 16px',
+    backgroundColor: '#4299e1',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '600',
+    marginBottom: '16px',
+  },
+  requestsList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+  },
+  requestItem: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '16px',
+    backgroundColor: '#f7fafc',
+    borderRadius: '8px',
+    border: '1px solid #e2e8f0',
+  },
+  requestInfo: {
+    flex: 1,
+  },
+  requestUser: {
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#2d3748',
+    margin: '0 0 4px 0',
+  },
+  requestTime: {
+    fontSize: '12px',
+    color: '#718096',
+    margin: '0',
+  },
+  requestActions: {
+    display: 'flex',
+    gap: '8px',
+  },
+  approveButton: {
+    padding: '8px 16px',
+    backgroundColor: '#48bb78',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontWeight: '600',
+  },
+  rejectButton: {
+    padding: '8px 16px',
+    backgroundColor: '#f56565',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '13px',
     fontWeight: '600',
   },
 };

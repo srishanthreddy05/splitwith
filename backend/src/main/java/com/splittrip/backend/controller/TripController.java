@@ -9,6 +9,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -55,6 +56,17 @@ public class TripController {
     public ResponseEntity<ApiResponse<List<Trip>>> getTripsByUser(@PathVariable String userId) {
         List<Trip> trips = tripService.getTripsByUser(userId);
         return ResponseEntity.ok(ApiResponse.success(trips));
+    }
+
+    @GetMapping("/code/{tripCode}")
+    public ResponseEntity<ApiResponse<Trip>> getTripByCode(@PathVariable String tripCode) {
+        try {
+            Trip trip = tripService.getTripByCode(tripCode);
+            return ResponseEntity.ok(ApiResponse.success(trip));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
     }
 
     @GetMapping("/{tripId}")
@@ -109,17 +121,6 @@ public class TripController {
         }
     }
 
-    @GetMapping("/code/{tripCode}")
-    public ResponseEntity<ApiResponse<Trip>> getTripByCode(@PathVariable String tripCode) {
-        try {
-            Trip trip = tripService.getTripByCode(tripCode);
-            return ResponseEntity.ok(ApiResponse.success(trip));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
-    }
-
     @GetMapping("/{tripId}/summary")
     public ResponseEntity<ApiResponse<TripSummaryDTO>> getTripSummary(@PathVariable String tripId) {
         try {
@@ -127,6 +128,25 @@ public class TripController {
             return ResponseEntity.ok(ApiResponse.success(summary));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{tripId}/status")
+    public ResponseEntity<ApiResponse<Trip>> updateTripStatus(
+            @PathVariable String tripId,
+            @RequestBody Map<String, String> request) {
+        try {
+            String status = request.get("status");
+            if (status == null || status.isBlank()) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("status is required"));
+            }
+            
+            Trip trip = tripService.updateTripStatus(tripId, status);
+            return ResponseEntity.ok(ApiResponse.success(trip));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
     }
