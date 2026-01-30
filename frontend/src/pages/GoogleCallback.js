@@ -50,13 +50,15 @@ const GoogleCallback = () => {
           setTimeout(() => navigate('/'), 3000);
           return;
         }
+// Parse state to restore context
+try {
+  if (state) {
+    JSON.parse(atob(state));
+  }
+} catch (err) {
+  console.warn('Could not parse state:', err);
+}
 
-        // Parse state to restore context
-        try {
-          const stateData = state ? JSON.parse(atob(state)) : {}; // eslint-disable-next-line no-unused-vars
-        } catch (err) {
-          console.warn('Could not parse state:', err);
-        }
 
         console.log('Processing Google OAuth callback with code:', code.substring(0, 20) + '...');
         setStatus('processing');
