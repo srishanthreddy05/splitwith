@@ -24,7 +24,8 @@ public class FirebaseConfig {
 
         String firebaseJson = System.getenv("FIREBASE_CONFIG_JSON");
 
-        if (firebaseJson != null && !firebaseJson.isBlank()) {
+       if (firebaseJson != null && firebaseJson.trim().startsWith("{")) {
+
             // ✅ Production (Render)
             serviceAccount = new ByteArrayInputStream(
                     firebaseJson.getBytes(StandardCharsets.UTF_8)
