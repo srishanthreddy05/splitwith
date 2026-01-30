@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE_URL } from '../services/apiConfig';
 
 const CreateTrip = () => {
   const [tripName, setTripName] = useState('');
@@ -10,7 +11,7 @@ const CreateTrip = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:9090/trips', {
+      const res = await fetch(`${API_BASE_URL}/trips`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: tripName, createdBy })

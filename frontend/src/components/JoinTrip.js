@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE_URL } from '../services/apiConfig';
 
 const JoinTrip = () => {
   const [tripId, setTripId] = useState('');
@@ -10,7 +11,7 @@ const JoinTrip = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:9090/trips/${tripId}/join`, {
+      const res = await fetch(`${API_BASE_URL}/trips/${tripId}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId })

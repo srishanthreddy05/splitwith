@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE_URL } from '../services/apiConfig';
 
 const CreateExpense = () => {
   const [tripId, setTripId] = useState('');
@@ -14,7 +15,7 @@ const CreateExpense = () => {
     setLoading(true);
     try {
       const splitArray = splitBetween.split(',').map(id => id.trim());
-      const res = await fetch('http://localhost:9090/expenses', {
+      const res = await fetch(`${API_BASE_URL}/expenses`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE_URL } from '../services/apiConfig';
 
 const CreateUser = () => {
   const [name, setName] = useState('');
@@ -10,7 +11,7 @@ const CreateUser = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:9090/users', {
+      const res = await fetch(`${API_BASE_URL}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email })

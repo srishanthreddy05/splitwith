@@ -1,3 +1,5 @@
+import { API_BASE_URL } from '../services/apiConfig';
+
 // Guest Identity Management using localStorage
 const GUEST_ID_KEY = 'splitwith_guest_id';
 const GUEST_NAME_KEY = 'splitwith_guest_name';
@@ -39,7 +41,7 @@ export const guestIdentity = {
 
     // Register guest with backend
     try {
-      const response = await fetch('http://localhost:9090/users/guest', {
+      const response = await fetch(`${API_BASE_URL}/users/guest`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ guestId, name: guestName })

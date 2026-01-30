@@ -14,7 +14,7 @@
  * - Only store what's strictly necessary
  */
 
-const API_BASE_URL = 'http://localhost:9090';
+import { API_BASE_URL } from './apiConfig';
 
 const STORAGE_KEYS = {
   USER_ID: 'splitwith_user_id',

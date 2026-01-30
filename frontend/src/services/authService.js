@@ -5,7 +5,7 @@
  * Uses cookies for session management (JSESSIONID).
  */
 
-const API_BASE_URL = 'http://localhost:9090';
+import { API_BASE_URL } from './apiConfig';
 
 const authService = {
   /**

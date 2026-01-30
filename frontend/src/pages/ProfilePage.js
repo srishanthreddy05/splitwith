@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import IdentityService from '../services/IdentityService';
 import authService from '../services/authService';
 import UpgradeAccountModal from '../components/UpgradeAccountModal';
+import { API_BASE_URL } from '../services/apiConfig';
 
 const ProfilePage = ({ user: userProp }) => {
   const navigate = useNavigate();
@@ -52,7 +53,7 @@ const ProfilePage = ({ user: userProp }) => {
     }
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:9090/users/${userId}`);
+      const response = await fetch(`${API_BASE_URL}/users/${userId}`);
       const data = await response.json();
       if (data.success) {
         setUser(data.data);

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE_URL } from '../services/apiConfig';
 
 const ViewBalances = () => {
   const [tripId, setTripId] = useState('');
@@ -11,7 +12,7 @@ const ViewBalances = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`http://localhost:9090/trips/${tripId}/balances`);
+      const res = await fetch(`${API_BASE_URL}/trips/${tripId}/balances`);
       const data = await res.json();
       if (data.success) {
         setBalances(data.data);

@@ -8,8 +8,7 @@
  */
 
 import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:9090';
+import { API_BASE_URL } from './apiConfig';
 
 // Create axios instance with base URL
 const apiClient = axios.create({

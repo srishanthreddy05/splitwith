@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:9090';
+import { API_BASE_URL } from './apiConfig';
 
 // User API calls
 export const userAPI = {

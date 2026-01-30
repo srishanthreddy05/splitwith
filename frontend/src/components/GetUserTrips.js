@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE_URL } from '../services/apiConfig';
 
 const GetUserTrips = () => {
   const [userId, setUserId] = useState('');
@@ -11,7 +12,7 @@ const GetUserTrips = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`http://localhost:9090/trips/user/${userId}`);
+      const res = await fetch(`${API_BASE_URL}/trips/user/${userId}`);
       const data = await res.json();
       if (data.success) {
         setTrips(data.data);
