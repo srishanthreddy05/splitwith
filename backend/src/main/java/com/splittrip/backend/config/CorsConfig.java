@@ -4,7 +4,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.HandlerInterceptor;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -12,30 +11,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class CorsConfig implements WebMvcConfigurer {
 
     /**
-     * ✅ CORS configuration
-     */
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-                .allowedOrigins(
-                        "http://localhost:3000",
-                        "https://splitwith-ten.vercel.app"
-                )
-                .allowedMethods(
-                        "GET",
-                        "POST",
-                        "PUT",
-                        "DELETE",
-                        "PATCH",
-                        "OPTIONS"
-                )
-                .allowedHeaders("*")
-                .allowCredentials(true)
-                .maxAge(3600);
-    }
-
-    /**
      * ✅ Google / Firebase popup compatibility
+     * ❌ NO CORS LOGIC HERE
      */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
@@ -47,13 +24,13 @@ public class CorsConfig implements WebMvcConfigurer {
                     Object handler
             ) {
 
-                // 🔥 Required for Google OAuth popup communication
+                // 🔥 REQUIRED for Google OAuth popup
                 response.setHeader(
                         "Cross-Origin-Opener-Policy",
                         "same-origin-allow-popups"
                 );
 
-                // ❌ DO NOT set COEP (it breaks Google login)
+                // ❌ DO NOT enable COEP (breaks Google login)
                 // response.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
 
                 return true;
