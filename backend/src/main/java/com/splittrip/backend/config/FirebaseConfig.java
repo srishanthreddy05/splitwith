@@ -9,7 +9,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 @Configuration
 @Slf4j
@@ -18,8 +20,23 @@ public class FirebaseConfig {
     @Bean
     public FirebaseApp firebaseApp() throws Exception {
 
-        InputStream serviceAccount =
-                new ClassPathResource("firebase-service-account.json").getInputStream();
+        InputStream serviceAccount;
+
+        String firebaseJson = System.getenv("FIREBASE_CONFIG_JSON");
+
+        if (firebaseJson != null && !firebaseJson.isBlank()) {
+            // ✅ Production (Render)
+            serviceAccount = new ByteArrayInputStream(
+                    firebaseJson.getBytes(StandardCharsets.UTF_8)
+            );
+            log.info("Initializing Firebase from ENV");
+        } else {
+            // ✅ Local development
+            serviceAccount = new ClassPathResource(
+                    "firebase-service-account.json"
+            ).getInputStream();
+            log.info("Initializing Firebase from local JSON file");
+        }
 
         FirebaseOptions options = FirebaseOptions.builder()
                 .setCredentials(GoogleCredentials.fromStream(serviceAccount))
@@ -27,7 +44,6 @@ public class FirebaseConfig {
 
         if (FirebaseApp.getApps().isEmpty()) {
             FirebaseApp.initializeApp(options);
-            log.info("Firebase Admin SDK initialized using JSON file");
         }
 
         return FirebaseApp.getInstance();
