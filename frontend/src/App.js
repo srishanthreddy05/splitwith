@@ -87,7 +87,7 @@ function AppContent() {
     if (['/dashboard', '/profile', '/previous-trips'].includes(location.pathname) && !user) {
       bootstrap();
     }
-  }, [location.pathname]);
+  }, [location.pathname, user]);
 
   if (loading) {
     return (

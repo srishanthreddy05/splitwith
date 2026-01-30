@@ -44,7 +44,7 @@ const Dashboard = ({ user }) => {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, userName, user]);
 
   useEffect(() => {
     loadUserTrips();

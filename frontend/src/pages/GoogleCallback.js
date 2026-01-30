@@ -52,9 +52,8 @@ const GoogleCallback = () => {
         }
 
         // Parse state to restore context
-        let stateData = {};
         try {
-          stateData = state ? JSON.parse(atob(state)) : {};
+          const stateData = state ? JSON.parse(atob(state)) : {}; // eslint-disable-next-line no-unused-vars
         } catch (err) {
           console.warn('Could not parse state:', err);
         }

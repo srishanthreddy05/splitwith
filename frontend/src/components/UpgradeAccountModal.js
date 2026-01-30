@@ -8,7 +8,6 @@ import React, { useState } from 'react';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '../firebase';
 import IdentityService from '../services/IdentityService';
-import EmailOtpFlow from './EmailOtpFlow';
 
 const UpgradeAccountModal = ({ userId, onSuccess, onClose }) => {
   const [step, setStep] = useState('choice'); // 'choice', 'email', 'google'
