@@ -3,11 +3,13 @@
  * 
  * Options:
  * 1. Continue as Guest
- * 2. Sign in with Google
+ * 2. Sign in with Google (Firebase Auth)
  * 3. Sign in with Email
  */
 
 import React, { useState } from 'react';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { auth } from '../firebase';
 import IdentityService from '../services/IdentityService';
 import GuestNameModal from './GuestNameModal';
 import EmailOtpFlow from './EmailOtpFlow';
@@ -18,23 +20,41 @@ const AuthChoiceModal = ({ onClose, onSuccess, action }) => {
   const [error, setError] = useState('');
 
   /**
-   * Server-managed Google OAuth (no SDK, no popup)
-   * Delegates to Spring Boot at /oauth2/authorization/google
+   * Firebase Google Sign-In
+   * 1. Pop up Firebase Google sign-in dialog
+   * 2. Send user object to IdentityService to get token and authenticate
    */
-  const handleGoogleClick = () => {
+  const handleGoogleClick = async () => {
     try {
       setLoading(true);
+      setError('');
 
-      // Store the intended action (create/join trip) to resume after login
-      sessionStorage.setItem('auth_return_action', action);
-      sessionStorage.setItem('auth_return_path', window.location.pathname);
+      // Create Google auth provider
+      const provider = new GoogleAuthProvider();
 
-      // Hand off to Spring Boot OAuth2 client
-      window.location.href = 'http://localhost:9090/oauth2/authorization/google';
+      // Sign in with Google popup
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
 
+      // Pass user object to IdentityService
+      // IdentityService will get the token and send to backend
+      const authResponse = await IdentityService.authenticateFirebaseGoogle(user);
+
+      if (onSuccess) {
+        onSuccess(authResponse);
+      }
     } catch (err) {
-      console.error('Error initiating Google redirect:', err);
-      setError('Failed to start Google login. Please try again.');
+      console.error('Google sign-in error:', err);
+      
+      // Handle specific Firebase errors
+      if (err.code === 'auth/popup-closed-by-user') {
+        setError('Sign-in cancelled.');
+      } else if (err.code === 'auth/popup-blocked') {
+        setError('Pop-up blocked. Please allow pop-ups and try again.');
+      } else {
+        setError(err.message || 'Google sign-in failed. Please try again.');
+      }
+    } finally {
       setLoading(false);
     }
   };

@@ -18,20 +18,24 @@ const MyTrips = () => {
       const { userId } = guestIdentity.get();
       
       if (!userId) {
-        setError('Please refresh the page');
         setLoading(false);
         return;
       }
 
       const result = await tripAPI.getUserTrips(userId);
 
-      if (result.success) {
+      // Handle API response with success flag
+      if (result?.success && Array.isArray(result?.data)) {
         setTrips(result.data);
+      } else if (Array.isArray(result)) {
+        // Direct array response
+        setTrips(result);
       } else {
-        setError(result.error || 'Failed to load trips');
+        setTrips([]);
       }
     } catch (err) {
-      setError('Network error');
+      console.error('Failed to load trips:', err);
+      setTrips([]);
     } finally {
       setLoading(false);
     }

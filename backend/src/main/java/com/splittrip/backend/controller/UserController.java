@@ -4,16 +4,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
 import com.splittrip.backend.dto.ApiResponse;
 import com.splittrip.backend.dto.CreateGuestUserRequest;
 import com.splittrip.backend.dto.CreateUserRequest;
 import com.splittrip.backend.dto.ProfileUpdateRequest;
 import com.splittrip.backend.model.User;
 import com.splittrip.backend.service.UserService;
+import com.splittrip.backend.utils.FirebaseTokenVerifier;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.util.StringUtils;
 
 import java.util.Map;
 
@@ -24,6 +25,7 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final FirebaseTokenVerifier firebaseTokenVerifier;
 
     /**
      * Create user (legacy endpoint, kept for backward compat).
@@ -152,18 +154,44 @@ public class UserController {
 
     /**
      * Upgrade guest account to Google auth.
+     * Supports two token formats:
+     * 1. Firebase ID token via Authorization Bearer header (preferred)
+     * 2. Legacy request body with googleId, email, displayName
+     * 
      * Preserves all user data (trips, expenses, etc).
      * 
-     * Request: { googleId: "...", email: "john@example.com", displayName: "John Doe" }
+     * Request (Firebase via header):
+     * Headers: { Authorization: "Bearer <firebase_id_token>" }
+     * Body: {} (empty)
+     * 
+     * Request (legacy via body):
+     * { googleId: "...", email: "john@example.com", displayName: "John Doe" }
      */
     @PostMapping("/{id}/upgrade/google")
     public ResponseEntity<ApiResponse<User>> upgradeToGoogle(
             @PathVariable String id,
-            @RequestBody Map<String, String> request) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestBody(required = false) Map<String, String> request) {
         try {
-            String googleId = request.get("googleId");
-            String email = request.get("email");
-            String displayName = request.get("displayName");
+            String googleId = null;
+            String email = null;
+            String displayName = null;
+
+            // Extract token from Authorization header (Firebase)
+            if (StringUtils.hasText(authHeader) && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring("Bearer ".length());
+                var tokenClaims = firebaseTokenVerifier.verifyToken(token);
+                
+                googleId = (String) tokenClaims.get("sub");  // Firebase UID from 'sub' claim
+                email = FirebaseTokenVerifier.extractEmail(tokenClaims);
+                displayName = FirebaseTokenVerifier.extractName(tokenClaims);
+            }
+            // Fallback to request body (legacy)
+            else if (request != null) {
+                googleId = request.get("googleId");
+                email = request.get("email");
+                displayName = request.get("displayName");
+            }
 
             if (googleId == null || googleId.isEmpty() || email == null || email.isEmpty()) {
                 return ResponseEntity.badRequest()

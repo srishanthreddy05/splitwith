@@ -2,6 +2,7 @@ package com.splittrip.backend.service;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.Optional;
 
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,13 @@ import lombok.extern.slf4j.Slf4j;
 public class UserService {
 
     private final UserRepository userRepository;
+
+    /**
+     * Safe lookup by email.
+     */
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
 
     /**
      * Create a guest user with display name.
@@ -68,20 +76,20 @@ public class UserService {
      * If new user, creates with authProvider = "GOOGLE".
      */
     public User getOrCreateGoogleUser(String googleId, String email, String displayName) {
-        // First check by email (more reliable)
         return userRepository.findByEmail(email)
-                .orElseGet(() -> {
-                    User newUser = User.builder()
-                            .id(UUID.randomUUID().toString())
-                            .googleId(googleId)
-                            .email(email)
-                            .displayName(displayName)
-                            .authProvider("GOOGLE")
-                            .createdAt(LocalDateTime.now())
-                            .updatedAt(LocalDateTime.now())
-                            .build();
-                    return userRepository.save(newUser);
-                });
+            .or(() -> {
+                User newUser = User.builder()
+                    .id(UUID.randomUUID().toString())
+                    .googleId(googleId)
+                    .email(email)
+                    .displayName(displayName)
+                    .authProvider("GOOGLE")
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
+                    .build();
+                return Optional.of(userRepository.save(newUser));
+            })
+            .get();
     }
 
     /**

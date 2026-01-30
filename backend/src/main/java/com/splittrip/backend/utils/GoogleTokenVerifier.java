@@ -36,10 +36,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GoogleTokenVerifier {
 
-    @Value("${app.google.client-id}")
+    @Value("${app.google.client-id:}")
     private String googleClientId;
 
-    @Value("${app.google.client-secret}")
+    @Value("${app.google.client-secret:}")
     private String googleClientSecret;
 
     /**

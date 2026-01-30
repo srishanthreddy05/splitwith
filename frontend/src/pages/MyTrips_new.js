@@ -21,11 +21,16 @@ const MyTrips = () => {
       }
 
       const result = await tripAPI.getUserTrips(userId);
-      if (result.success) {
+      if (result?.success && Array.isArray(result?.data)) {
         setTrips(result.data);
+      } else if (Array.isArray(result)) {
+        setTrips(result);
+      } else {
+        setTrips([]);
       }
     } catch (err) {
       console.error('Failed to load trips:', err);
+      setTrips([]);
     } finally {
       setLoading(false);
     }

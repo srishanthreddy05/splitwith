@@ -1,10 +1,12 @@
 /**
  * UpgradeAccountModal: Allow guest users to upgrade to email or Google auth.
  * Preserves all trip/expense data during upgrade.
+ * Uses Firebase Auth for Google sign-in.
  */
 
 import React, { useState } from 'react';
-import { useGoogleLogin } from '@react-oauth/google';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { auth } from '../firebase';
 import IdentityService from '../services/IdentityService';
 import EmailOtpFlow from './EmailOtpFlow';
 
@@ -18,47 +20,53 @@ const UpgradeAccountModal = ({ userId, onSuccess, onClose }) => {
   const [displayName, setDisplayName] = useState('');
 
   /**
-   * Real Google OAuth flow for guest upgrade:
+   * Firebase Google OAuth flow for guest upgrade:
    * 1. Guest user clicks "Upgrade with Google"
-   * 2. Google login popup appears
+   * 2. Firebase Google sign-in popup appears
    * 3. User authenticates with Google
-   * 4. Frontend receives credential (ID token)
-   * 5. Send to backend POST /auth/google with currentUserId (the guest ID)
+   * 4. Get Firebase ID token
+   * 5. Send token to backend with currentUserId (the guest ID)
    * 6. Backend:
-   *    - Verifies Google token
+   *    - Verifies Firebase token
    *    - Checks if guest user exists
-   *    - Upgrades guest to Google auth (preserves trips/expenses)
+   *    - Upgrades guest to GOOGLE auth (preserves trips/expenses)
    *    - Returns updated userId (same as before)
    * 7. Frontend saves userId and closes modal
    */
-  const googleUpgrade = useGoogleLogin({
-    onSuccess: async (codeResponse) => {
+  const handleGoogleUpgrade = async () => {
+    try {
       setLoading(true);
       setError('');
 
-      try {
-        const authResponse = await IdentityService.authenticateGoogle(
-          codeResponse.credential,
-          userId // Pass current guest userId for upgrade
-        );
+      // Create Google auth provider
+      const provider = new GoogleAuthProvider();
 
-        if (onSuccess) {
-          onSuccess();
-        }
-      } catch (err) {
-        setError(err.message || 'Google upgrade failed');
-      } finally {
-        setLoading(false);
+      // Sign in with Google popup
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      // Get Firebase ID token
+      const idToken = await user.getIdToken();
+
+      // Send token to backend for verification and user upgrade
+      await IdentityService.upgradeGuestToFirebaseGoogle(userId, idToken);
+
+      if (onSuccess) {
+        onSuccess();
       }
-    },
-    onError: () => {
-      setError('Google login failed. Please try again.');
-    },
-    flow: 'implicit',
-  });
+    } catch (err) {
+      console.error('Google upgrade error:', err);
 
-  const handleGoogleUpgrade = () => {
-    googleUpgrade();
+      if (err.code === 'auth/popup-closed-by-user') {
+        setError('Sign-in cancelled.');
+      } else if (err.code === 'auth/popup-blocked') {
+        setError('Pop-up blocked. Please allow pop-ups and try again.');
+      } else {
+        setError(err.message || 'Google upgrade failed. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   /**

@@ -27,12 +27,21 @@ const PreviousTrips = ({ user }) => {
     
     try {
       setLoading(true);
-      const allTrips = await tripAPI.getUserTrips(userId);
+      const result = await tripAPI.getUserTrips(userId);
+      
+      // Extract trips array from response
+      const allTrips = result?.success && Array.isArray(result?.data) 
+        ? result.data 
+        : Array.isArray(result) 
+        ? result 
+        : [];
+      
       // Filter completed trips
       const completedTrips = allTrips.filter(t => t.status === 'COMPLETED');
       setTrips(completedTrips);
     } catch (err) {
       console.error('Error loading previous trips:', err);
+      setTrips([]);
     } finally {
       setLoading(false);
     }

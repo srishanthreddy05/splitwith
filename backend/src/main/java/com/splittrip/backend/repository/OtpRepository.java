@@ -10,8 +10,11 @@ import com.splittrip.backend.model.Otp;
 
 public interface OtpRepository extends MongoRepository<Otp, String> {
 
-    // Find the most recent valid OTP for an email
+    // Find the most recent unverified OTP for an email
     Optional<Otp> findFirstByEmailAndVerifiedIsFalseOrderByCreatedAtDesc(String email);
+
+    // Find the most recent verified OTP for an email
+    Optional<Otp> findFirstByEmailAndVerifiedIsTrueOrderByCreatedAtDesc(String email);
 
     // Find all OTPs for an email (for cleanup)
     List<Otp> findByEmail(String email);

@@ -3,7 +3,6 @@ package com.splittrip.backend.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -43,16 +42,7 @@ public class UserInfoController {
         }
 
         response.put("authenticated", true);
-        
-        if (auth.getPrincipal() instanceof OAuth2User) {
-            OAuth2User oauth2User = (OAuth2User) auth.getPrincipal();
-            response.put("name", oauth2User.getAttribute("name"));
-            response.put("email", oauth2User.getAttribute("email"));
-            response.put("id", oauth2User.getAttribute("sub"));
-            response.put("picture", oauth2User.getAttribute("picture"));
-        } else {
-            response.put("name", auth.getName());
-        }
+        response.put("name", auth.getName());
 
         return ResponseEntity.ok(response);
     }

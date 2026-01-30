@@ -2,128 +2,129 @@ package com.splittrip.backend.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpHeaders;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import com.splittrip.backend.service.UserService;
-
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Arrays;
 
+/**
+ * Spring Security Configuration
+ * 
+ * IMPORTANT MIGRATION NOTE (Firebase Authentication):
+ * - OAuth2 client configuration is DEPRECATED and no longer used
+ * - Firebase Admin SDK now handles all authentication
+ * - This configuration is kept for backward compatibility only
+ * 
+ * Frontend authenticates directly with Firebase and sends Bearer tokens
+ * to backend endpoints. Backend verifies tokens using Firebase Admin SDK.
+ * 
+ * Old flow (deprecated):
+ * 1. Frontend → /oauth2/authorization/google
+ * 2. Backend handles OAuth2 flow
+ * 3. Backend creates session
+ * 
+ * New flow (Firebase):
+ * 1. Frontend uses Firebase SDK to sign in
+ * 2. Frontend sends Bearer token to backend
+ * 3. Backend verifies token, creates MongoDB user record
+ * 4. Backend returns user data (no session needed)
+ * 
+ * To fully remove OAuth2:
+ * 1. Remove spring-boot-starter-oauth2-client from pom.xml
+ * 2. Remove .oauth2Login() configuration from this file
+ * 3. Update application.properties to remove OAuth2 settings
+ */
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final UserService userService;
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+            // Enable CORS for cross-origin requests from React frontend (localhost:3000)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            
+            // Disable CSRF for stateless REST API (OAuth2 uses PKCE for security)
             .csrf(AbstractHttpConfigurer::disable)
+            
+            // Disable HTTP Basic and form login - we only use OAuth2
             .httpBasic(AbstractHttpConfigurer::disable)
             .formLogin(AbstractHttpConfigurer::disable)
             
-            // Session management - CRITICAL for OAuth2
+            // Session management for OAuth2 - create session only when needed (after OAuth login)
+            // CRITICAL: OAuth2 requires session to store authentication state during redirect flow
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                .maximumSessions(1)
+                .maximumSessions(1) // Limit to 1 concurrent session per user
             )
             
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints
-                .requestMatchers("/health", "/test/**", "/me", "/api/auth/**", "/auth/**").permitAll()
-                // Allow all API endpoints (identification via headers for guest users or session for OAuth)
+                // Public endpoints - no authentication required
+                .requestMatchers("/health", "/test/**", "/me", "/favicon.ico").permitAll()
+                
+                // CRITICAL: Allow Spring Security's OAuth2 endpoints for Google login flow
+                // /oauth2/authorization/google - initiates OAuth2 flow (redirects to Google)
+                // /login/oauth2/code/google - callback URL where Google sends authorization code
+                .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+                
+                // Public API endpoints for guest users and OAuth authenticated users
+                .requestMatchers("/api/auth/**", "/auth/**").permitAll()
                 .requestMatchers("/trips/**", "/users/**", "/expenses/**", "/join-requests/**").permitAll()
+                
+                // All other endpoints require authentication
                 .anyRequest().authenticated()
             )
             
-            .oauth2Login(oauth -> oauth
-                .successHandler(customAuthenticationSuccessHandler())
-                .failureUrl("http://localhost:3000/?error=auth_failed")
-            )
-            
-            .logout(logout -> logout
-                .logoutUrl("/logout")
-                .logoutSuccessHandler((request, response, authentication) -> {
-                    response.setStatus(200);
-                    response.setContentType("application/json");
-                    response.getWriter().write("{\"message\":\"Logged out successfully\"}");
-                })
-                .deleteCookies("JSESSIONID")
-                .invalidateHttpSession(true)
+            // Stateless session management for Firebase Bearer token authentication
+            // No session cookies needed - tokens are sent in Authorization header
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             );
 
         return http.build();
     }
     
     /**
-     * Custom success handler that sets proper cookie attributes for cross-origin sessions
-     * and saves OAuth user to database
+     * CORS configuration for cross-origin requests
+     * 
+     * Required because frontend (localhost:3000) makes requests to backend (localhost:9090)
+     * 
+     * Key settings:
+     * - allowCredentials: true → allows cookies (JSESSIONID) to be sent cross-origin
+     * - allowedOrigins: localhost:3000 → only frontend can make requests
+     * - allowedMethods: all standard HTTP methods
+     * - allowedHeaders: * → allow all request headers (including custom ones)
      */
-    @Bean
-    public AuthenticationSuccessHandler customAuthenticationSuccessHandler() {
-        return (HttpServletRequest request, HttpServletResponse response, Authentication authentication) -> {
-            // Save OAuth user to database
-            if (authentication.getPrincipal() instanceof OAuth2User) {
-                OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
-                String googleId = oauth2User.getAttribute("sub");
-                String email = oauth2User.getAttribute("email");
-                String name = oauth2User.getAttribute("name");
-                
-                // Create or get user in database
-                userService.getOrCreateGoogleUser(googleId, email, name);
-            }
-            
-            // Set session cookie with proper attributes for localhost cross-origin
-            Cookie sessionCookie = new Cookie("JSESSIONID", request.getSession().getId());
-            sessionCookie.setPath("/");
-            sessionCookie.setHttpOnly(true);
-            sessionCookie.setSecure(false); // Set to true in production with HTTPS
-            sessionCookie.setMaxAge(3600); // 1 hour
-            // Note: SameSite=None requires Secure=true, so in localhost we use Lax
-            // In production with HTTPS, use: sessionCookie.setAttribute("SameSite", "None");
-            
-            response.addCookie(sessionCookie);
-            response.sendRedirect("http://localhost:3000/dashboard");
-        };
-    }
-
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         
-        // Allow React frontend
+        // Allow React frontend origin
         config.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
         
-        // Allow all common HTTP methods
+        // Allow all standard HTTP methods
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         
-        // Allow all headers (including custom ones)
+        // Allow all headers (including custom identification headers for guest users)
         config.setAllowedHeaders(Arrays.asList("*"));
         
-        // CRITICAL: Allow credentials (cookies, authorization headers)
+        // CRITICAL: Enable credentials (cookies like JSESSIONID) to be sent cross-origin
+        // Without this, browser blocks session cookie on API requests from frontend
         config.setAllowCredentials(true);
         
-        // Expose headers that frontend might need
+        // Expose headers that frontend JavaScript can read
         config.setExposedHeaders(Arrays.asList("Authorization", "Set-Cookie"));
         
-        // Cache preflight response for 1 hour
+        // Cache preflight OPTIONS requests for 1 hour (reduces network overhead)
         config.setMaxAge(3600L);
 
+        // Apply CORS configuration to all endpoints
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;

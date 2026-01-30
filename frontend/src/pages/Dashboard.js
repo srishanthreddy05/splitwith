@@ -39,7 +39,7 @@ const Dashboard = ({ user }) => {
       const active = Array.isArray(trips) ? trips.filter(t => t.status === 'ACTIVE') : [];
       setActiveTrips(active);
     } catch (err) {
-      setError('Failed to load trips: ' + (err?.message || err));
+      console.error('Failed to load trips:', err);
       setActiveTrips([]);
     } finally {
       setLoading(false);

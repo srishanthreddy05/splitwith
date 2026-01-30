@@ -129,12 +129,54 @@ export const IdentityService = {
   },
 
   /**
+   * Firebase Google Sign-In: Get Firebase ID token and send to backend.
+   * POST /auth/google with Authorization: Bearer <token>
+   * 
+   * Args:
+   *   user: Firebase user object from signInWithPopup()
+   */
+  authenticateFirebaseGoogle: async (user) => {
+    try {
+      // Get the Firebase ID token from the user object
+      const idToken = await user.getIdToken();
+
+      const response = await fetch(`${API_BASE_URL}/auth/google`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${idToken}`
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Backend /auth/google error:', response.status, errorText);
+        throw new Error(`Backend error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Google authentication failed');
+      }
+
+      // Store identity
+      IdentityService.setIdentity(data.data.userId, false);
+
+      return data.data;
+    } catch (error) {
+      console.error('Firebase Google authentication error:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Google OAuth: Send ID token to backend.
    * POST /auth/google
    * 
    * Args:
    *   googleIdToken: JWT token from Google SDK (credential field)
    *   currentUserId: Optional. If provided, backend will upgrade this guest user to Google auth
+   * 
+   * @deprecated Use authenticateFirebaseGoogle instead
    */
   authenticateGoogle: async (googleIdToken, currentUserId = null) => {
     const payload = {
@@ -222,8 +264,53 @@ export const IdentityService = {
   },
 
   /**
-   * Email+OTP: Step 2 - Verify OTP and create/login user.
+   * Email+OTP: Step 2 - Verify OTP only (no password yet).
    * POST /auth/email/verify-otp
+   */
+  verifyOtpOnly: async (email, otp) => {
+    const response = await fetch(`${API_BASE_URL}/auth/email/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp }),
+    });
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || 'OTP verification failed');
+    }
+
+    // If existing user, store identity
+    if (data.data.userId) {
+      IdentityService.setIdentity(data.data.userId, false);
+    }
+
+    return data.data;
+  },
+
+  /**
+   * Email+OTP: Step 3 - Set password and display name (new users only).
+   * POST /auth/email/set-password
+   */
+  setPassword: async (email, password, displayName) => {
+    const response = await fetch(`${API_BASE_URL}/auth/email/set-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, displayName }),
+    });
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || 'Password setup failed');
+    }
+
+    // Store identity for new user
+    IdentityService.setIdentity(data.data.userId, false);
+
+    return data.data;
+  },
+
+  /**
+   * DEPRECATED: Use verifyOtpOnly() and setPassword() instead.
    */
   verifyOtp: async (email, otp, password = null, displayName = null, isSignup = false) => {
     const response = await fetch(`${API_BASE_URL}/auth/email/verify-otp`, {
@@ -244,7 +331,9 @@ export const IdentityService = {
     }
 
     // Store identity
-    IdentityService.setIdentity(data.data.userId, false);
+    if (data.data.userId) {
+      IdentityService.setIdentity(data.data.userId, false);
+    }
 
     return data.data;
   },
@@ -288,8 +377,35 @@ export const IdentityService = {
   },
 
   /**
+   * Upgrade guest to Firebase Google auth.
+   * POST /users/{id}/upgrade/google
+   * 
+   * Args:
+   *   userId: Guest user ID to upgrade
+   *   firebaseIdToken: Firebase ID token from Google sign-in
+   */
+  upgradeGuestToFirebaseGoogle: async (userId, firebaseIdToken) => {
+    const response = await fetch(`${API_BASE_URL}/users/${userId}/upgrade/google`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${firebaseIdToken}`
+      },
+    });
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || 'Google upgrade failed');
+    }
+
+    return data.data;
+  },
+
+  /**
    * Upgrade guest to Google auth.
    * POST /users/{id}/upgrade/google
+   * 
+   * @deprecated Use upgradeGuestToFirebaseGoogle instead
    */
   upgradeGuestToGoogle: async (userId, googleId, email, displayName) => {
     const response = await fetch(`${API_BASE_URL}/users/${userId}/upgrade/google`, {

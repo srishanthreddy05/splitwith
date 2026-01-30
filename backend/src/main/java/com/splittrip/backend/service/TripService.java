@@ -70,7 +70,21 @@ public class TripService {
     }
 
     public List<Trip> getTripsByUser(String userId) {
-        return tripRepository.findByMembersContaining(userId);
+        try {
+            List<Trip> trips = tripRepository.findByMembersContaining(userId);
+            
+            if (trips != null && !trips.isEmpty()) {
+                System.out.println("[TripService] Found " + trips.size() + " trips for user: " + userId);
+            } else {
+                System.out.println("[TripService] No trips found for user: " + userId);
+            }
+            
+            return trips != null ? trips : new ArrayList<>();
+        } catch (Exception e) {
+            System.err.println("[TripService] Database error fetching trips for user " + userId + ": " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to fetch trips from database", e);
+        }
     }
 
     public Trip addMemberToTrip(String tripId, String userId) {

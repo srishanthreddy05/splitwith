@@ -58,27 +58,17 @@ const EmailOtpFlow = ({ onSuccess, onBack }) => {
 
     setLoading(true);
     try {
-      // First verify OTP (without creating user yet)
-      // For new users, we move to password step
-      // For existing users, we log them in directly
+      // Verify OTP only (no password yet)
+      const authResponse = await IdentityService.verifyOtpOnly(email, otp);
 
-      // Try to verify as login first
-      try {
-        const authResponse = await IdentityService.verifyOtp(
-          email,
-          otp,
-          null,
-          null,
-          false // isSignup = false
-        );
-
-        // Existing user: login success
+      // Check if user already exists
+      if (authResponse.nextStep === 'continue_action') {
+        // Existing user - login complete
         if (onSuccess) {
           onSuccess(authResponse);
         }
-        return;
-      } catch (loginErr) {
-        // Not found: probably new user, ask for password
+      } else if (authResponse.nextStep === 'set_password') {
+        // New user - ask for password and name
         setIsNewUser(true);
         setStep('password');
       }
@@ -113,12 +103,11 @@ const EmailOtpFlow = ({ onSuccess, onBack }) => {
 
     setLoading(true);
     try {
-      const authResponse = await IdentityService.verifyOtp(
+      // Set password (OTP already verified, no need to send OTP again)
+      const authResponse = await IdentityService.setPassword(
         email,
-        otp,
         password,
-        displayName.trim(),
-        true // isSignup = true
+        displayName.trim()
       );
 
       if (onSuccess) {

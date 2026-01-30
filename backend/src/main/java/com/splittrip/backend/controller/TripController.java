@@ -1,5 +1,6 @@
 package com.splittrip.backend.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -54,8 +55,26 @@ public class TripController {
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<ApiResponse<List<Trip>>> getTripsByUser(@PathVariable String userId) {
-        List<Trip> trips = tripService.getTripsByUser(userId);
-        return ResponseEntity.ok(ApiResponse.success(trips));
+        try {
+            // Validate userId is not empty or null
+            if (userId == null || userId.isBlank()) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("User ID cannot be empty"));
+            }
+
+            List<Trip> trips = tripService.getTripsByUser(userId);
+
+            // Return 200 with empty array for new users (no trips yet)
+            return ResponseEntity.ok(ApiResponse.success(trips != null ? trips : new ArrayList<>()));
+        } catch (Exception e) {
+            // Log error for debugging
+            System.err.println("[TripController] Error fetching trips for user " + userId + ": " + e.getMessage());
+            e.printStackTrace();
+
+            // Return 500 only for genuine server errors
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Internal Server Error: Failed to fetch trips"));
+        }
     }
 
     @GetMapping("/code/{tripCode}")

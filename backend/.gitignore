@@ -48,3 +48,6 @@ application-local.properties
 application-prod.properties
 application-test.properties
 application-secrets.properties
+# Firebase Admin SDK key (VERY SENSITIVE)
+src/main/resources/firebase-service-account.json
+firebase-service-account.json
