@@ -4,6 +4,9 @@ WORKDIR /app
 
 COPY . .
 
+# 🔥 FIX: give execute permission to mvnw
+RUN chmod +x mvnw
+
 RUN ./mvnw clean package -DskipTests
 
 EXPOSE 9090
