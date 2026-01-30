@@ -2,75 +2,44 @@ package com.splittrip.backend.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import lombok.RequiredArgsConstructor;
 
-import java.util.Arrays;
 @Configuration
-@RequiredArgsConstructor
 public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            // Enable CORS
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-            // Stateless REST API
+        http
+            // ✅ Use global CorsConfig
+            .cors(Customizer.withDefaults())
+
+            // ❌ Disable Spring auth completely
             .csrf(AbstractHttpConfigurer::disable)
             .httpBasic(AbstractHttpConfigurer::disable)
             .formLogin(AbstractHttpConfigurer::disable)
+            .logout(AbstractHttpConfigurer::disable)
 
-            // 🔥 Firebase = STATELESS (NO SESSIONS)
+            // ✅ Firebase = stateless
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
 
+            // ✅ Firebase-only auth (permit all for now)
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints
                 .requestMatchers(
-                    "/health",
-                    "/favicon.ico",
-                    "/api/auth/**",
-                    "/auth/**"
+                        "/health",
+                        "/favicon.ico",
+                        "/auth/**",
+                        "/api/auth/**"
                 ).permitAll()
-
-                // Everything else requires Firebase token
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
             );
 
         return http.build();
-    }
-
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-
-        // 🔥 Allow frontend origins
-        config.setAllowedOrigins(Arrays.asList(
-            "http://localhost:3000",
-            "https://splitwith.vercel.app"   // update if custom domain later
-        ));
-
-        config.setAllowedMethods(Arrays.asList(
-            "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
-        ));
-
-        config.setAllowedHeaders(Arrays.asList("*"));
-        config.setAllowCredentials(true);
-
-        config.setExposedHeaders(Arrays.asList("Authorization"));
-        config.setMaxAge(3600L);
-
-        UrlBasedCorsConfigurationSource source =
-                new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return source;
     }
 }

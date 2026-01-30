@@ -1,37 +1,61 @@
 package com.splittrip.backend.config;
 
-import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
-import org.springframework.web.servlet.HandlerInterceptor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
+    /**
+     * ✅ CORS configuration
+     */
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins("http://localhost:3000")
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedOrigins(
+                        "http://localhost:3000",
+                        "https://splitwith-ten.vercel.app"
+                )
+                .allowedMethods(
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "PATCH",
+                        "OPTIONS"
+                )
                 .allowedHeaders("*")
                 .allowCredentials(true)
                 .maxAge(3600);
     }
 
+    /**
+     * ✅ Google / Firebase popup compatibility
+     */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new HandlerInterceptor() {
             @Override
-            public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-                // Set Cross-Origin-Opener-Policy to allow popups to communicate with parent window
-                // This is critical for Google OAuth popup authentication
-                // Use "same-origin" to allow full popup communication without COEP restrictions
-                response.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-                // Removed COEP header as it was too strict and blocked popup communication
-                
+            public boolean preHandle(
+                    HttpServletRequest request,
+                    HttpServletResponse response,
+                    Object handler
+            ) {
+
+                // 🔥 Required for Google OAuth popup communication
+                response.setHeader(
+                        "Cross-Origin-Opener-Policy",
+                        "same-origin-allow-popups"
+                );
+
+                // ❌ DO NOT set COEP (it breaks Google login)
+                // response.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+
                 return true;
             }
         }).addPathPatterns("/**");
