@@ -50,18 +50,7 @@ const Dashboard = ({ user }) => {
     loadUserTrips();
   }, [loadUserTrips, location]);
 
-  const handleCreateTrip = async () => {
-    const tripName = window.prompt('Name your trip:');
-    if (!tripName || !tripName.trim()) return;
 
-    setError('');
-    try {
-      const newTrip = await tripAPI.create(tripName.trim(), userId, userName);
-      navigate(`/trip/${newTrip.id}`);
-    } catch (err) {
-      setError('Failed to create trip: ' + (err?.message || err));
-    }
-  };
 
   const handleJoinTrip = async (e) => {
     e.preventDefault();
@@ -153,7 +142,7 @@ const Dashboard = ({ user }) => {
               Create a new trip and share the code with friends
             </p>
             <button
-              onClick={handleCreateTrip}
+              onClick={() => navigate('/create-trip')}
               style={styles.primaryButton}
             >
               Create New Trip

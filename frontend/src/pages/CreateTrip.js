@@ -15,7 +15,7 @@ const CreateTrip = () => {
     setError(null);
 
     try {
-      const { userId } = guestIdentity.get();
+      const { userId, guestName } = guestIdentity.get();
       
       if (!userId) {
         setError('Please refresh the page to initialize your account');
@@ -23,7 +23,7 @@ const CreateTrip = () => {
         return;
       }
 
-      const result = await tripAPI.create(tripName, userId);
+      const result = await tripAPI.create(tripName, userId, guestName);
 
       if (result.success) {
         navigate(`/trip/${result.data.id}`);

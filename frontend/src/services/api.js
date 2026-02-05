@@ -33,11 +33,11 @@ export const userAPI = {
 
 // Trip API calls
 export const tripAPI = {
-  create: async (name, createdBy) => {
+  create: async (name, createdBy, createdByName) => {
     const response = await fetch(`${API_BASE_URL}/trips`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, createdBy })
+      body: JSON.stringify({ name, createdBy, createdByName })
     });
     return response.json();
   },

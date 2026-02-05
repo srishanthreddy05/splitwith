@@ -32,6 +32,7 @@ import authService from './services/authService';
 import Navbar from './components/Navbar';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
+import CreateTrip from './pages/CreateTrip';
 import TripPage from './pages/TripPage';
 import PreviousTrips from './pages/PreviousTrips';
 import ProfilePage from './pages/ProfilePage';
@@ -129,6 +130,10 @@ function AppContent() {
           <Route
             path="/dashboard"
             element={user ? <Dashboard user={user} /> : <Navigate to="/" replace />}
+          />
+          <Route
+            path="/create-trip"
+            element={user ? <CreateTrip user={user} /> : <Navigate to="/" replace />}
           />
           <Route
             path="/trip/:tripId"
