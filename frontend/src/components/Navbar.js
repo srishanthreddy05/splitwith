@@ -63,9 +63,30 @@ const Navbar = ({ user }) => {
         )}
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu Overlay */}
       {user && mobileMenuOpen && (
-        <div style={styles.mobileMenu}>
+        <div 
+          style={styles.overlay} 
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Mobile Menu - Slide from Right */}
+      {user && (
+        <div style={{
+          ...styles.mobileMenu,
+          transform: mobileMenuOpen ? 'translateX(0)' : 'translateX(100%)',
+        }}>
+          <div style={styles.mobileMenuHeader}>
+            <div style={styles.mobileUserName}>Hi, {user.displayName}!</div>
+            <button 
+              onClick={() => setMobileMenuOpen(false)}
+              style={styles.closeButton}
+              aria-label="Close menu"
+            >
+              ✕
+            </button>
+          </div>
           <Link 
             to="/dashboard" 
             style={mobileLinkStyle('/dashboard')}
@@ -87,7 +108,6 @@ const Navbar = ({ user }) => {
           >
             Profile
           </Link>
-          <div style={styles.mobileUserName}>Hi, {user.displayName}!</div>
         </div>
       )}
     </nav>
@@ -150,25 +170,59 @@ const styles = {
     cursor: 'pointer',
     padding: '8px',
   },
+  overlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 998,
+  },
   mobileMenu: {
-    display: 'none',
-    flexDirection: 'column',
+    position: 'fixed',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    width: '280px',
+    maxWidth: '80%',
     backgroundColor: 'white',
-    borderTop: '1px solid #e2e8f0',
-    padding: '12px 0',
+    boxShadow: '-2px 0 8px rgba(0, 0, 0, 0.15)',
+    display: 'flex',
+    flexDirection: 'column',
+    padding: '0',
+    zIndex: 999,
+    transition: 'transform 0.3s ease-in-out',
+    overflowY: 'auto',
+  },
+  mobileMenuHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '20px',
+    borderBottom: '1px solid #e2e8f0',
+  },
+  closeButton: {
+    background: 'none',
+    border: 'none',
+    fontSize: '24px',
+    color: '#4a5568',
+    cursor: 'pointer',
+    padding: '4px 8px',
+    lineHeight: 1,
   },
   mobileLink: {
     textDecoration: 'none',
     fontSize: '16px',
-    padding: '12px 20px',
+    padding: '16px 20px',
     transition: 'all 0.2s',
+    borderBottom: '1px solid #f7fafc',
   },
   mobileUserName: {
-    fontSize: '14px',
-    color: '#718096',
-    padding: '12px 20px',
-    borderTop: '1px solid #e2e8f0',
-    marginTop: '8px',
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#2d3748',
+    flex: 1,
   },
 };
 
@@ -180,7 +234,15 @@ if (typeof document !== 'undefined') {
     @media (max-width: 768px) {
       nav > div > div:nth-child(2) { display: none !important; }
       nav button { display: block !important; }
-      nav > div + div { display: flex !important; }
+    }
+    
+    @media (min-width: 769px) {
+      nav > div + div,
+      nav > div + div + div { display: none !important; }
+    }
+    
+    body.menu-open {
+      overflow: hidden;
     }
   `;
   if (!document.getElementById('navbar-responsive-styles')) {

@@ -43,7 +43,7 @@ const Landing = ({ user }) => {
         <div style={styles.header} className="landing-header">
           <h1 style={styles.title} className="landing-title">Splitwith</h1>
           <p style={styles.subtitle} className="landing-subtitle">
-            Split trip expenses with friends, stress-free
+            Split expenses with friends, stress-free
           </p>
           {user && (
             <p style={styles.welcome} className="landing-welcome">
@@ -60,9 +60,9 @@ const Landing = ({ user }) => {
             onClick={handleCreateTrip}
           >
             <div style={styles.cardIcon} className="landing-card-icon">✨</div>
-            <h2 style={styles.cardTitle} className="landing-card-title">Create a Trip</h2>
+            <h2 style={styles.cardTitle} className="landing-card-title">Create an Expense</h2>
             <p style={styles.cardDescription}>
-              Start a new trip and get a shareable code to invite friends
+              Start a new Expense and get a shareable code to invite friends
             </p>
             <span style={styles.cardHint} className="landing-card-hint">→</span>
           </div>
@@ -73,9 +73,9 @@ const Landing = ({ user }) => {
             onClick={handleJoinTrip}
           >
             <div style={styles.cardIcon} className="landing-card-icon">🎫</div>
-            <h2 style={styles.cardTitle} className="landing-card-title">Join a Trip</h2>
+            <h2 style={styles.cardTitle} className="landing-card-title">Join an Expense</h2>
             <p style={styles.cardDescription}>
-              Have a trip code? Join an existing trip instantly
+              Have a expense code? Join an existing expense instantly
             </p>
             <span style={styles.cardHint} className="landing-card-hint">→</span>
           </div>
@@ -85,11 +85,11 @@ const Landing = ({ user }) => {
         {user && (
           <div style={styles.secondaryAction} className="landing-secondary">
             <button 
-              onClick={() => navigate('/previous-trips')}
+              onClick={() => navigate('/dashboard')}
               style={styles.secondaryButton}
               className="landing-secondary-button"
             >
-              View My Previous Trips
+              View My Dashboard
             </button>
           </div>
         )}
