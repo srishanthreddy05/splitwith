@@ -298,14 +298,14 @@ const TripPage = ({ user }) => {
       <div style={styles.content}>
         {/* Header */}
         <div style={styles.header}>
-          <h1 style={styles.title}>{tripSummary.name}</h1>
+          <h1 style={styles.title} className="trip-title">{tripSummary.name}</h1>
           <p style={styles.tripCode}>
             Trip Code: <strong>{tripSummary.tripCode}</strong>
           </p>
         </div>
 
         {/* Summary Cards */}
-        <div style={styles.summaryGrid}>
+        <div style={styles.summaryGrid} className="trip-summary-grid">
           <div style={styles.summaryCard}>
             <p style={styles.summaryLabel}>Members</p>
             <p style={styles.summaryValue}>{tripSummary.memberCount}</p>
@@ -325,7 +325,7 @@ const TripPage = ({ user }) => {
         </div>
 
         {/* Members */}
-        <div style={styles.section}>
+        <div style={styles.section} className="trip-section">
           <h2 style={styles.sectionTitle}>Members</h2>
           <div style={styles.membersList}>
             {tripSummary.memberNames && tripSummary.memberNames.length > 0 ? (
@@ -343,7 +343,7 @@ const TripPage = ({ user }) => {
 
         {/* Pending Join Requests */}
         {pendingRequests && pendingRequests.length > 0 && (
-          <div style={styles.section}>
+          <div style={styles.section} className="trip-section">
             <h2 style={styles.sectionTitle}>
               Join Requests ({pendingRequests.length})
             </h2>
@@ -358,14 +358,14 @@ const TripPage = ({ user }) => {
             {showJoinRequests && (
               <div style={styles.requestsList}>
                 {pendingRequests.map((request) => (
-                  <div key={request.id} style={styles.requestItem}>
+                  <div key={request.id} style={styles.requestItem} className="trip-request-item">
                     <div style={styles.requestInfo}>
                       <p style={styles.requestUser}>{request.userName}</p>
                       <p style={styles.requestTime}>
                         Requested on {new Date(request.createdAt).toLocaleDateString()}
                       </p>
                     </div>
-                    <div style={styles.requestActions}>
+                    <div style={styles.requestActions} className="trip-request-actions">
                       <button
                         onClick={() => handleApproveJoinRequest(request.id)}
                         disabled={requestActionLoading}
@@ -389,12 +389,12 @@ const TripPage = ({ user }) => {
         )}
 
         {/* Balances */}
-        <div style={styles.section}>
+        <div style={styles.section} className="trip-section">
           <h2 style={styles.sectionTitle}>Who Owes What</h2>
           {balances && balances.length > 0 ? (
             <div style={styles.balancesList}>
               {balances.map((balance, idx) => (
-                <div key={idx} style={styles.balanceItem}>
+                <div key={idx} style={styles.balanceItem} className="trip-balance-item">
                   <div style={styles.balanceLeft}>
                     <p style={styles.balanceName}>{balance.userName}</p>
                     <p style={styles.balanceStatus}>
@@ -421,7 +421,7 @@ const TripPage = ({ user }) => {
         </div>
 
         {/* Action Buttons */}
-        <div style={styles.actions}>
+        <div style={styles.actions} className="trip-actions">
           <button
             onClick={handleRefresh}
             style={styles.secondaryButton}
@@ -610,7 +610,7 @@ const styles = {
     marginBottom: '30px',
   },
   title: {
-    fontSize: '32px',
+    fontSize: '24px',
     fontWeight: 'bold',
     color: '#1a202c',
     margin: '0 0 8px 0',
@@ -622,9 +622,9 @@ const styles = {
   },
   summaryGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '16px',
-    marginBottom: '30px',
+    gridTemplateColumns: '1fr',
+    gap: '12px',
+    marginBottom: '20px',
   },
   summaryCard: {
     backgroundColor: 'white',
@@ -649,8 +649,8 @@ const styles = {
   section: {
     backgroundColor: 'white',
     borderRadius: '12px',
-    padding: '24px',
-    marginBottom: '20px',
+    padding: '16px',
+    marginBottom: '16px',
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
   },
   sectionTitle: {
@@ -687,8 +687,8 @@ const styles = {
   },
   balanceItem: {
     display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'column',
+    gap: '12px',
     padding: '16px',
     backgroundColor: '#f7f9fc',
     borderRadius: '8px',
@@ -721,8 +721,8 @@ const styles = {
   },
   actions: {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '16px',
+    gridTemplateColumns: '1fr',
+    gap: '12px',
   },
   primaryButton: {
     padding: '12px 16px',
@@ -868,8 +868,8 @@ const styles = {
   },
   requestItem: {
     display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'column',
+    gap: '12px',
     padding: '16px',
     backgroundColor: '#f7fafc',
     borderRadius: '8px',
@@ -892,8 +892,10 @@ const styles = {
   requestActions: {
     display: 'flex',
     gap: '8px',
+    width: '100%',
   },
   approveButton: {
+    flex: 1,
     padding: '8px 16px',
     backgroundColor: '#48bb78',
     color: 'white',
@@ -904,6 +906,7 @@ const styles = {
     fontWeight: '600',
   },
   rejectButton: {
+    flex: 1,
     padding: '8px 16px',
     backgroundColor: '#f56565',
     color: 'white',
@@ -914,5 +917,47 @@ const styles = {
     fontWeight: '600',
   },
 };
+
+// Add media query styles for responsive design
+if (typeof document !== 'undefined') {
+  const styleTag = document.getElementById('trippage-responsive-styles') || document.createElement('style');
+  styleTag.id = 'trippage-responsive-styles';
+  styleTag.innerHTML = `
+    @media (min-width: 640px) {
+      .trip-summary-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 16px !important;
+        margin-bottom: 30px !important;
+      }
+      .trip-title {
+        font-size: 32px !important;
+      }
+      .trip-section {
+        padding: 24px !important;
+        margin-bottom: 20px !important;
+      }
+      .trip-actions {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 16px !important;
+      }
+      .trip-balance-item {
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+      }
+      .trip-request-item {
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+      }
+      .trip-request-actions {
+        width: auto !important;
+      }
+    }
+  `;
+  if (!document.getElementById('trippage-responsive-styles')) {
+    document.head.appendChild(styleTag);
+  }
+}
 
 export default TripPage;

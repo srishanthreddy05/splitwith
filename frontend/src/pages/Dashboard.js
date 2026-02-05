@@ -148,8 +148,8 @@ const Dashboard = ({ user }) => {
         </div>
 
         {activeTab === 'create' && (
-          <div style={styles.tabContent}>
-            <p style={styles.tabDescription}>
+          <div style={styles.tabContent} className="dashboard-tab-content">
+            <p style={styles.tabDescription} className="dashboard-tab-description">
               Create a new trip and share the code with friends
             </p>
             <button
@@ -162,8 +162,8 @@ const Dashboard = ({ user }) => {
         )}
 
         {activeTab === 'join' && (
-          <div style={styles.tabContent}>
-            <p style={styles.tabDescription}>
+          <div style={styles.tabContent} className="dashboard-tab-content">
+            <p style={styles.tabDescription} className="dashboard-tab-description">
               Enter the trip code from a friend to join
             </p>
             <form onSubmit={handleJoinTrip} style={styles.form}>
@@ -197,13 +197,13 @@ const Dashboard = ({ user }) => {
           {activeTrips && activeTrips.length > 0 ? (
             <div style={styles.tripsGrid}>
               {activeTrips.map(trip => (
-                <div key={trip.id} style={styles.tripCard}>
-                  <h3 style={styles.tripTitle}>{trip.name}</h3>
-                  <p style={styles.tripCode}>Code: <strong>{trip.tripCode}</strong></p>
-                  <p style={styles.tripInfo}>
+                <div key={trip.id} style={styles.tripCard} className="dashboard-trip-card">
+                  <h3 style={styles.tripTitle} className="dashboard-trip-title">{trip.name}</h3>
+                  <p style={styles.tripCode} className="dashboard-trip-code">Code: <strong>{trip.tripCode}</strong></p>
+                  <p style={styles.tripInfo} className="dashboard-trip-info">
                     {trip.members?.length || 0} members • {trip.status === 'ACTIVE' ? '✅ Active' : 'Completed'}
                   </p>
-                  <div style={styles.tripActions}>
+                  <div style={styles.tripActions} className="dashboard-trip-actions">
                     <button
                       onClick={() => navigate(`/trip/${trip.id}`)}
                       style={styles.primaryButton}
@@ -224,7 +224,7 @@ const Dashboard = ({ user }) => {
               ))}
             </div>
           ) : (
-            <div style={styles.emptyState}>
+            <div style={styles.emptyState} className="dashboard-empty-state">
               <p style={styles.emptyText}>
                 You are not part of any active trip yet.
               </p>
@@ -268,32 +268,32 @@ const styles = {
   tripCard: {
     backgroundColor: 'white',
     borderRadius: '12px',
-    padding: '30px',
-    marginBottom: '30px',
+    padding: '20px',
+    marginBottom: '16px',
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
     border: '2px solid #bee3f8',
   },
   tripTitle: {
-    fontSize: '24px',
+    fontSize: '20px',
     fontWeight: 'bold',
     color: '#1a202c',
     margin: '0 0 12px 0',
   },
   tripCode: {
-    fontSize: '14px',
+    fontSize: '13px',
     color: '#718096',
     margin: '0 0 12px 0',
   },
   tripInfo: {
-    fontSize: '14px',
+    fontSize: '13px',
     color: '#4a5568',
-    margin: '0 0 20px 0',
+    margin: '0 0 16px 0',
   },
   emptyState: {
     backgroundColor: 'white',
     borderRadius: '12px',
-    padding: '40px 30px',
-    marginBottom: '30px',
+    padding: '30px 20px',
+    marginBottom: '20px',
     textAlign: 'center',
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
   },
@@ -311,8 +311,8 @@ const styles = {
   tabs: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
-    gap: '12px',
-    marginBottom: '20px',
+    gap: '8px',
+    marginBottom: '16px',
   },
   tabButton: {
     padding: '12px',
@@ -326,15 +326,15 @@ const styles = {
   tabContent: {
     backgroundColor: 'white',
     borderRadius: '12px',
-    padding: '30px',
+    padding: '20px',
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-    marginBottom: '20px',
+    marginBottom: '16px',
   },
   tabDescription: {
     fontSize: '14px',
     color: '#718096',
-    marginBottom: '20px',
-    margin: '0 0 20px 0',
+    marginBottom: '16px',
+    margin: '0 0 16px 0',
   },
   form: {
     display: 'flex',
@@ -371,7 +371,7 @@ const styles = {
     transition: 'background-color 0.2s',
   },
   tripsSection: {
-    marginBottom: '30px',
+    marginBottom: '20px',
   },
   sectionTitle: {
     fontSize: '18px',
@@ -381,9 +381,9 @@ const styles = {
   },
   tripsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+    gridTemplateColumns: '1fr',
     gap: '16px',
-    marginBottom: '30px',
+    marginBottom: '20px',
   },
   tripTitleRow: {
     display: 'flex',
@@ -393,7 +393,7 @@ const styles = {
   },
   tripActions: {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
+    gridTemplateColumns: '1fr',
     gap: '8px',
   },
   tripTag: {
@@ -416,5 +416,46 @@ const styles = {
     margin: '0',
   },
 };
+
+// Add media query styles
+if (typeof document !== 'undefined') {
+  const styleTag = document.getElementById('dashboard-responsive-styles') || document.createElement('style');
+  styleTag.id = 'dashboard-responsive-styles';
+  styleTag.innerHTML = `
+    @media (min-width: 640px) {
+      .dashboard-trip-card {
+        padding: 30px !important;
+        margin-bottom: 30px !important;
+      }
+      .dashboard-trip-title {
+        font-size: 24px !important;
+      }
+      .dashboard-trip-code {
+        font-size: 14px !important;
+      }
+      .dashboard-trip-info {
+        font-size: 14px !important;
+        margin-bottom: 20px !important;
+      }
+      .dashboard-tab-content {
+        padding: 30px !important;
+        margin-bottom: 20px !important;
+      }
+      .dashboard-tab-description {
+        margin-bottom: 20px !important;
+      }
+      .dashboard-empty-state {
+        padding: 40px 30px !important;
+        margin-bottom: 30px !important;
+      }
+      .dashboard-trip-actions {
+        grid-template-columns: 1fr 1fr !important;
+      }
+    }
+  `;
+  if (!document.getElementById('dashboard-responsive-styles')) {
+    document.head.appendChild(styleTag);
+  }
+}
 
 export default Dashboard;

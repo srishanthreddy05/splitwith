@@ -102,7 +102,7 @@ function AppContent() {
   if (bootstrapError) {
     return (
       <div style={styles.loadingContainer}>
-        <div style={styles.errorBox}>
+        <div style={styles.errorBox} className="app-error-box">
           <p>{bootstrapError}</p>
           <button
             onClick={() => window.location.reload()}
@@ -164,6 +164,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#f7f9fc',
+    padding: '20px',
   },
   loadingSpinner: {
     textAlign: 'center',
@@ -171,10 +172,12 @@ const styles = {
   },
   errorBox: {
     backgroundColor: 'white',
-    padding: '30px',
+    padding: '20px',
     borderRadius: '8px',
     boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
     textAlign: 'center',
+    maxWidth: '400px',
+    width: '100%',
   },
   retryButton: {
     marginTop: '16px',
@@ -184,7 +187,24 @@ const styles = {
     border: 'none',
     borderRadius: '6px',
     cursor: 'pointer',
+    fontSize: '14px',
   },
 };
+
+// Add media query for larger screens
+if (typeof document !== 'undefined') {
+  const styleTag = document.getElementById('app-responsive-styles') || document.createElement('style');
+  styleTag.id = 'app-responsive-styles';
+  styleTag.innerHTML = `
+    @media (min-width: 640px) {
+      .app-error-box {
+        padding: 30px !important;
+      }
+    }
+  `;
+  if (!document.getElementById('app-responsive-styles')) {
+    document.head.appendChild(styleTag);
+  }
+}
 
 export default App;

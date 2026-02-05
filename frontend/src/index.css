@@ -6,6 +6,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #f5f5f5;
+  overflow-x: hidden;
 }
 
 code {
@@ -15,4 +16,26 @@ code {
 
 * {
   box-sizing: border-box;
+}
+
+/* Mobile responsive utilities */
+@media (max-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+  
+  body {
+    font-size: 14px;
+  }
+}
+
+/* Prevent text from being too small on mobile */
+input, button, textarea, select {
+  font-size: 16px;
+}
+
+/* Ensure images and media are responsive */
+img, video {
+  max-width: 100%;
+  height: auto;
 }
